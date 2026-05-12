@@ -5,3 +5,12 @@ dist
 
 # Ignore the output video from Git but not videos you import into src/.
 out
+
+# 媒體資源（音訊、背景圖、SRT 等上傳檔案）
+public/
+
+# Whisper 編譯二進位（Windows x64，幾百 MB）
+whisper.cpp/
+
+# node 捷徑
+node

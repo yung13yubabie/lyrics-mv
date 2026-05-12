@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Lyrics MV Studio</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+TC:wght@300;400;700&family=Noto+Serif+TC:wght@300;400;700&family=Zhi+Mang+Xing&family=Ma+Shan+Zheng&family=JetBrains+Mono:wght@400;700&display=swap"/>
+<style>
+:root {
+  --bg:       #0c0c0e;
+  --surface:  #141418;
+  --card:     #1a1a20;
+  --border:   #2a2a35;
+  --gold:     #d4a017;
+  --gold-dim: #8a6610;
+  --amber:    #f59e0b;
+  --text:     #e8e6e0;
+  --muted:    #6b6878;
+  --danger:   #ef4444;
+  --success:  #22c55e;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body:    'Noto Sans TC', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --radius:   10px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); overflow: hidden; }
+
+/* ── LAYOUT ── */
+.shell {
+  display: grid;
+  grid-template-rows: 56px 1fr 48px;
+  grid-template-columns: 360px 1fr;
+  height: 100vh;
+}
+header {
+  grid-column: 1/-1;
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+header::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(212,160,23,.06), transparent);
+  animation: shimmer 4s ease-in-out infinite;
+}
+@keyframes shimmer { 0%,100%{opacity:0} 50%{opacity:1} }
+.logo { font-family: var(--font-display); font-size: 22px; letter-spacing: 4px; color: var(--gold); }
+.logo span { color: var(--text); opacity:.5; }
+.waveform { display: flex; align-items: center; gap: 3px; margin-left: 12px; height: 20px; }
+.waveform-bar {
+  width: 3px; background: var(--gold-dim); border-radius: 2px;
+  animation: wave 1.2s ease-in-out infinite;
+}
+.waveform-bar:nth-child(1){height:8px;animation-delay:0s}
+.waveform-bar:nth-child(2){height:16px;animation-delay:.15s}
+.waveform-bar:nth-child(3){height:12px;animation-delay:.3s}
+.waveform-bar:nth-child(4){height:20px;animation-delay:.45s}
+.waveform-bar:nth-child(5){height:14px;animation-delay:.6s}
+.waveform-bar:nth-child(6){height:8px;animation-delay:.75s}
+@keyframes wave { 0%,100%{transform:scaleY(.4)} 50%{transform:scaleY(1)} }
+.header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.badge { font-size:11px; font-family:var(--font-mono); color:var(--muted); background:var(--card); padding:4px 10px; border-radius:20px; border:1px solid var(--border); }
+
+/* ── LEFT PANEL ── */
+.left-panel {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  /* overflow-x 不設 hidden：設了會吃掉 section 的 border-radius 邊框 */
+  padding: 20px 16px 28px;
+  display: flex; flex-direction: column; gap: 16px;
+  height: calc(100vh - 56px - 48px);
+  box-sizing: border-box;
+}
+.left-panel::-webkit-scrollbar { width: 6px; }
+.left-panel::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+.left-panel::-webkit-scrollbar-track { background: transparent; }
+
+/* ── RIGHT PANEL ── */
+.right-panel {
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  height: calc(100vh - 56px - 48px);
+  box-sizing: border-box;
+}
+/* ── 預覽區（上半，固定） */
+.preview-zone {
+  flex: 0 0 auto;
+  padding: 12px 16px 8px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.preview-note {
+  font-size: 10px; color: var(--muted); font-family: var(--font-mono);
+  margin: 0; padding: 0;
+}
+/* ── 設定區（下半，可捲動） */
+.settings-zone {
+  flex: 1; overflow-y: auto;
+  padding: 16px 16px 28px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.settings-zone::-webkit-scrollbar { width: 6px; }
+.settings-zone::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+.settings-zone::-webkit-scrollbar-track { background: transparent; }
+
+/* ── SECTION CARD ── */
+.section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  flex-shrink: 0; /* 不壓縮 — 讓左欄超出高度並觸發 overflow-y: auto */
+}
+.section-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px; font-family: var(--font-mono); letter-spacing: 2px;
+  color: var(--muted); text-transform: uppercase;
+}
+.section-header .dot { width:6px; height:6px; border-radius:50%; background:var(--gold); flex-shrink:0; }
+.section-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+
+/* ── DROP ZONE ── */
+.drop-zone {
+  border: 1.5px dashed var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--gold);
+  background: rgba(212,160,23,.04);
+}
+.drop-zone input { position:absolute;inset:0;opacity:0;cursor:pointer; }
+.drop-icon { font-size: 28px; margin-bottom: 6px; opacity:.5; }
+.drop-label { font-size: 13px; color: var(--muted); }
+.drop-label b { color: var(--text); font-weight:700; }
+.drop-hint { font-size: 11px; color: var(--muted); margin-top: 4px; font-family:var(--font-mono); }
+.file-info {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(212,160,23,.07);
+  border: 1px solid var(--gold-dim);
+  border-radius: 6px; padding: 8px 12px;
+  font-size: 12px; font-family: var(--font-mono);
+}
+.file-info .fi-name { flex:1; color: var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.file-info .fi-size { color: var(--muted); flex-shrink:0; }
+.file-info .fi-clear { cursor:pointer; color:var(--muted); flex-shrink:0; transition:.15s; }
+.file-info .fi-clear:hover { color:var(--danger); }
+
+/* ── IMAGE LIST ── */
+.img-list { display:flex; flex-direction:column; gap:8px; }
+.img-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 10px;
+  transition: border-color .2s;
+}
+.img-item:hover { border-color: var(--gold-dim); }
+.img-thumb { width:44px;height:44px;object-fit:cover;border-radius:4px;flex-shrink:0; }
+.img-name { flex:1; font-size:12px; font-family:var(--font-mono); color:var(--text); white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.img-dur { display:flex;align-items:center;gap:4px;flex-shrink:0; }
+.img-dur input { width:52px;padding:4px 6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;font-family:var(--font-mono);text-align:center; }
+.img-dur label { font-size:11px;color:var(--muted); }
+.img-remove { cursor:pointer;color:var(--muted);flex-shrink:0;font-size:14px;transition:.15s; }
+.img-remove:hover { color:var(--danger); }
+
+/* ── FORM CONTROLS ── */
+.form-row { display:flex; align-items:center; gap:12px; }
+.form-label { font-size:12px; color:var(--muted); font-family:var(--font-mono); letter-spacing:.5px; white-space:nowrap; }
+.form-col { display:flex; flex-direction:column; gap:6px; flex:1; }
+.form-col .form-label { margin:0; }
+input[type="range"] {
+  -webkit-appearance:none; flex:1; height:3px;
+  background:var(--border); border-radius:2px; cursor:pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:14px;height:14px;border-radius:50%;
+  background:var(--gold); cursor:pointer; transition:.1s;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform:scale(1.2); }
+input[type="color"] {
+  width:34px;height:28px;padding:2px;border:1px solid var(--border);
+  border-radius:4px;background:var(--bg);cursor:pointer;
+}
+input[type="text"].hex-input {
+  width:74px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);
+  border-radius:4px;color:var(--text);font-size:12px;font-family:var(--font-mono);
+}
+input[type="text"].hex-input:focus { outline:none;border-color:var(--gold); }
+select {
+  background:var(--bg); border:1px solid var(--border); border-radius:6px;
+  color:var(--text); padding:7px 10px; font-size:13px; font-family:var(--font-body);
+  cursor:pointer; outline:none; flex:1;
+}
+select:focus { border-color:var(--gold); }
+.range-val { font-family:var(--font-mono); font-size:12px; color:var(--gold); min-width:32px; text-align:right; }
+
+/* ── POSITION PICKER ── */
+.pos-grid {
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+}
+.pos-btn {
+  padding:8px;border:1px solid var(--border);border-radius:6px;
+  background:var(--bg);color:var(--muted);cursor:pointer;font-size:11px;
+  font-family:var(--font-mono);text-align:center;transition:all .2s;
+}
+.pos-btn:hover { border-color:var(--gold-dim);color:var(--text); }
+.pos-btn.selected { border-color:var(--gold);color:var(--gold);background:rgba(212,160,23,.08); }
+.pos-icon { font-size:18px;display:block;margin-bottom:4px; }
+
+/* ── ANIMATION MODE PICKER ── */
+.anim-grid {
+  display:grid;grid-template-columns:repeat(2,1fr);gap:6px;
+}
+.anim-btn {
+  padding:10px 8px;border:1px solid var(--border);border-radius:6px;
+  background:var(--bg);color:var(--muted);cursor:pointer;font-size:11px;
+  font-family:var(--font-mono);text-align:center;transition:all .2s;
+  display:flex;flex-direction:column;gap:3px;
+}
+.anim-btn:hover { border-color:var(--gold-dim);color:var(--text); }
+.anim-btn.selected { border-color:var(--gold);color:var(--gold);background:rgba(212,160,23,.08); }
+.anim-icon { font-size:16px; }
+.anim-label { font-size:10px; }
+.anim-desc { font-size:9px;color:var(--muted);font-family:var(--font-body); }
+
+/* ── COLOR PALETTE ── */
+.palette-cats {
+  display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;
+}
+.palette-cat {
+  padding:3px 8px;border:1px solid var(--border);border-radius:4px;
+  background:var(--bg);color:var(--muted);cursor:pointer;font-size:10px;
+  font-family:var(--font-mono);transition:all .15s;
+}
+.palette-cat:hover { border-color:var(--gold-dim);color:var(--text); }
+.palette-cat.active { border-color:var(--gold);color:var(--gold);background:rgba(212,160,23,.08); }
+.palette-swatches {
+  display:flex;gap:5px;flex-wrap:wrap;
+}
+.swatch {
+  width:24px;height:24px;border-radius:4px;cursor:pointer;
+  border:2px solid transparent;transition:all .15s;flex-shrink:0;
+}
+.swatch:hover { transform:scale(1.15);border-color:rgba(255,255,255,.3); }
+.swatch.active { border-color:#fff;transform:scale(1.1); }
+
+/* ── ASPECT RATIO TOGGLE ── */
+.ratio-grid { display:grid;grid-template-columns:1fr 1fr;gap:6px; }
+.ratio-btn {
+  padding:10px;border:1px solid var(--border);border-radius:6px;
+  background:var(--bg);color:var(--muted);cursor:pointer;font-size:11px;
+  font-family:var(--font-mono);text-align:center;transition:all .2s;
+}
+.ratio-btn:hover { border-color:var(--gold-dim);color:var(--text); }
+.ratio-btn.selected { border-color:var(--gold);color:var(--gold);background:rgba(212,160,23,.08); }
+.ratio-icon { font-size:20px;display:block;margin-bottom:4px; }
+
+/* ── PREVIEW PANEL ── */
+.preview-echo-ghost {
+  position: absolute; left:0; right:0;
+  padding: 12px 32px;
+  text-align: center; word-break: break-word;
+  pointer-events: none;
+  transform-origin: center center;
+}
+.preview-area {
+  background:#000;
+  border-radius:8px;
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  position:relative;
+  max-height:260px;
+  cursor:zoom-in;
+  transition:transform .15s ease;
+  transform-origin:center center;
+}
+.preview-area.ratio-169 { aspect-ratio:16/9; }
+.preview-area.ratio-916 { aspect-ratio:9/16; max-height:340px; width:auto; margin:0 auto; }
+.preview-placeholder { text-align:center;color:var(--muted); }
+.preview-placeholder .pi-icon { font-size:48px;opacity:.3;margin-bottom:8px; }
+.preview-placeholder p { font-size:13px; }
+#preview-text {
+  position:absolute;
+  left:0;right:0;
+  padding:16px 40px;
+  text-align:center;
+  word-break:break-word;
+  text-shadow:0 2px 8px rgba(0,0,0,.9);
+  font-weight:900;
+  pointer-events:none;
+}
+.preview-bg {
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+}
+.preview-dim {
+  position:absolute;inset:0;background:rgba(0,0,0,.5);
+}
+
+/* ── RENDER PANEL ── */
+.render-section {
+  background: var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px; display:flex;flex-direction:column;gap:12px;
+}
+.render-btn {
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:14px;border-radius:8px;border:none;
+  background:linear-gradient(135deg,var(--gold),#b8860b);
+  color:#0c0c0e;font-family:var(--font-display);font-size:18px;letter-spacing:3px;
+  cursor:pointer;transition:all .2s;
+}
+.render-btn:hover { transform:translateY(-1px);box-shadow:0 8px 24px rgba(212,160,23,.3); }
+.render-btn:disabled { opacity:.4;cursor:not-allowed;transform:none;box-shadow:none; }
+.progress-wrap { display:none; }
+.progress-bar-bg {
+  height:4px;background:var(--border);border-radius:2px;overflow:hidden;
+}
+.progress-bar-fill {
+  height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));
+  width:0%;transition:width .5s;border-radius:2px;
+}
+.progress-log {
+  font-family:var(--font-mono);font-size:11px;color:var(--muted);
+  max-height:80px;overflow-y:auto;
+}
+.progress-log::-webkit-scrollbar{width:3px;}
+.progress-log::-webkit-scrollbar-thumb{background:var(--border);}
+.download-btn {
+  display:none;align-items:center;justify-content:center;gap:8px;
+  padding:12px;border-radius:8px;border:1px solid var(--success);
+  background:rgba(34,197,94,.08);color:var(--success);
+  font-family:var(--font-mono);font-size:13px;cursor:pointer;transition:all .2s;
+  text-decoration:none;
+}
+.download-btn:hover { background:rgba(34,197,94,.15); }
+
+/* ── PRESET CARDS ── */
+.preset-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+.preset-card {
+  padding:10px 12px;border:1px solid var(--border);border-radius:8px;
+  background:var(--bg);cursor:pointer;text-align:left;transition:all .2s;
+}
+.preset-card:hover { border-color:var(--gold-dim);background:rgba(212,160,23,.04); }
+.preset-card strong { color:var(--text);font-size:12px;display:block;margin-bottom:3px; }
+.preset-card span { font-size:10px;color:var(--muted);font-family:var(--font-mono); }
+
+/* ── ENHANCED CARD HOVER ── */
+.section { transition: border-color .25s, box-shadow .25s; }
+.section:hover { border-color: rgba(212,160,23,.4); box-shadow: 0 0 24px rgba(212,160,23,.06); }
+
+/* ── SECTION DOT GLOW ── */
+.section-header .dot {
+  animation: dot-pulse 3.5s ease-in-out infinite;
+}
+@keyframes dot-pulse {
+  0%,100% { box-shadow: 0 0 3px var(--gold-dim); }
+  50%     { box-shadow: 0 0 10px var(--gold), 0 0 20px rgba(212,160,23,.3); }
+}
+
+/* ── ANIM-BTN SELECTED GLOW ── */
+.anim-btn.selected {
+  border-color: var(--gold) !important;
+  color: var(--gold) !important;
+  background: rgba(212,160,23,.12) !important;
+  box-shadow: 0 0 18px rgba(212,160,23,.22), inset 0 0 10px rgba(212,160,23,.06);
+}
+
+/* ── POS-BTN SELECTED GLOW ── */
+.pos-btn.selected {
+  box-shadow: 0 0 14px rgba(212,160,23,.2);
+}
+
+/* ── ANIM ICON MICRO-ANIMATIONS ── */
+@keyframes anim-sentfade {
+  0%,100% { opacity: 0; transform: translateY(4px) scale(0.88); }
+  25%,75% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes anim-lineswap {
+  0%      { transform: translateY(8px) scale(.93); opacity: 0; }
+  18%,65% { transform: translateY(0) scale(1);     opacity: 1; }
+  85%,100%{ transform: translateY(-8px) scale(1.05); opacity: 0; }
+}
+@keyframes anim-charpop {
+  0%,100% { opacity: .25; transform: scale(.75) rotate(-6deg); }
+  30%     { opacity: 1;   transform: scale(1.3) rotate(0); }
+  60%     { opacity: 1;   transform: scale(.98) rotate(0); }
+  70%     { opacity: 1;   transform: scale(1) rotate(0); }
+}
+@keyframes anim-sweep {
+  0%,100% { filter: brightness(.5); color: rgba(255,255,255,.4); }
+  50% { filter: brightness(1.3); color: var(--gold); text-shadow: 0 0 10px var(--gold); }
+}
+@keyframes anim-echo {
+  0%,100% { transform: scale(1);    letter-spacing: .04em; opacity: .85; }
+  50%      { transform: scale(1.22); letter-spacing: .1em;  opacity: 1; }
+}
+.anim-btn[data-anim="sentence-fade"] .anim-icon { animation: anim-sentfade 2.4s ease-in-out infinite; display:inline-block; }
+.anim-btn[data-anim="line-swap"]     .anim-icon { animation: anim-lineswap  2s ease-in-out infinite;   display:inline-block; }
+.anim-btn[data-anim="char-appear"]   .anim-icon { animation: anim-charpop   1.9s ease-in-out infinite; display:inline-block; }
+.anim-btn[data-anim="char-highlight"].anim-icon { animation: anim-sweep     2s ease-in-out infinite;   display:inline-block; }
+.anim-btn[data-anim="scale-echo"]    .anim-icon { animation: anim-echo      2s ease-in-out infinite;   display:inline-block; }
+
+/* ── ECHO SETTINGS PANEL ── */
+.echo-panel {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 14px 14px 12px;
+  background: linear-gradient(135deg, rgba(212,160,23,.05), rgba(212,160,23,.02));
+  border: 1px solid var(--gold-dim);
+  border-radius: 8px;
+}
+.echo-panel.visible { display: flex; animation: echoReveal .22s ease; }
+@keyframes echoReveal {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.echo-panel-title {
+  font-size: 10px; font-family: var(--font-mono); letter-spacing: 2px;
+  color: var(--gold); text-transform: uppercase;
+  display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
+}
+.echo-panel-title::before { content: '◎'; font-size: 13px; }
+
+/* ── RENDER BUTTON SHIMMER ── */
+.render-btn { position: relative; overflow: hidden; }
+.render-btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.18) 50%, transparent 100%);
+  transform: translateX(-110%);
+  pointer-events: none;
+}
+.render-btn:not(:disabled):hover::after { animation: shimmer-run .7s ease forwards; }
+@keyframes shimmer-run { to { transform: translateX(110%); } }
+
+/* ── RANGE THUMB ACTIVE ── */
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(1.45);
+  box-shadow: 0 0 10px rgba(212,160,23,.6);
+}
+
+/* ── TAB ACTIVE BG ── */
+.tab.active { background: rgba(212,160,23,.05); }
+
+/* ── DROP ZONE DRAGOVER GLOW ── */
+.drop-zone.dragover {
+  box-shadow: 0 0 20px rgba(212,160,23,.18);
+}
+
+/* ── INPUT FOCUS GOLD ── */
+input[type="text"]:focus, textarea:focus {
+  border-color: var(--gold-dim) !important;
+  box-shadow: 0 0 0 2px rgba(212,160,23,.1);
+  outline: none;
+}
+
+/* ── STATUS BAR ── */
+footer {
+  grid-column:1/-1;
+  display:flex;align-items:center;gap:16px;padding:0 20px;
+  background:var(--surface);border-top:1px solid var(--border);
+  font-size:11px;color:var(--muted);font-family:var(--font-mono);
+}
+.status-dot { width:6px;height:6px;border-radius:50%;background:var(--success);animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- HEADER -->
+<header>
+  <div class="logo">LYRICS<span> / </span>MV STUDIO</div>
+  <div class="waveform">
+    <div class="waveform-bar"></div><div class="waveform-bar"></div>
+    <div class="waveform-bar"></div><div class="waveform-bar"></div>
+    <div class="waveform-bar"></div><div class="waveform-bar"></div>
+  </div>
+  <div class="header-right">
+    <div class="badge">Remotion 4.0 · Node.js</div>
+  </div>
+</header>
+
+<!-- LEFT PANEL -->
+<aside class="left-panel">
+
+  <!-- 音樂 -->
+  <div class="section">
+    <div class="section-header"><span class="dot"></span>AUDIO</div>
+    <div class="section-body">
+      <div class="drop-zone" id="audio-drop" onclick="document.getElementById('audio-input').click()">
+        <input type="file" id="audio-input" accept=".mp3,.wav,.m4a,.flac,.aac" hidden/>
+        <div class="drop-icon">🎵</div>
+        <div class="drop-label"><b>點選</b>或拖曳音樂檔案</div>
+        <div class="drop-hint">.mp3 · .wav · .m4a · .flac</div>
+      </div>
+      <div id="audio-info" style="display:none"></div>
+
+      <!-- AI 辨識歌詞（Whisper via ffmpeg） -->
+      <button id="transcribe-btn" onclick="runTranscribe()"
+        style="width:100%;padding:11px;border:1.5px solid var(--gold-dim);border-radius:8px;
+               background:rgba(212,160,23,.06);color:var(--gold);cursor:pointer;
+               font-size:13px;font-family:var(--font-mono);letter-spacing:.5px;
+               transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:3px;"
+        onmouseover="this.style.background='rgba(212,160,23,.13)';this.style.borderColor='var(--gold)'"
+        onmouseout="this.style.background='rgba(212,160,23,.06)';this.style.borderColor='var(--gold-dim)'">
+        <span style="font-size:16px;">🎙 AI 辨識歌詞</span>
+        <span style="font-size:10px;color:var(--muted);font-family:var(--font-body);">Whisper — 自動生成帶時間軸的 LRC 歌詞</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 歌曲資訊 -->
+  <div class="section">
+    <div class="section-header"><span class="dot"></span>SONG INFO</div>
+    <div class="section-body">
+      <div class="form-row">
+        <span class="form-label">歌名</span>
+        <input type="text" id="song-title" placeholder="（選填）顯示在影片左下角"
+          style="flex:1;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:var(--font-body);outline:none;"
+          oninput="this.style.borderColor='var(--gold-dim)'"/>
+      </div>
+      <div class="form-row">
+        <span class="form-label">作者</span>
+        <input type="text" id="song-artist" placeholder="（選填）顯示在歌名上方"
+          style="flex:1;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:var(--font-body);outline:none;"
+          oninput="this.style.borderColor='var(--gold-dim)'"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- 歌詞 -->
+  <div class="section">
+    <div class="section-header"><span class="dot"></span>LYRICS</div>
+    <div class="section-body">
+      <div class="drop-zone" id="srt-drop" onclick="document.getElementById('srt-input').click()">
+        <input type="file" id="srt-input" accept=".srt,.lrc" hidden/>
+        <div class="drop-icon">📝</div>
+        <div class="drop-label"><b>點選</b>或拖曳歌詞檔案</div>
+        <div class="drop-hint">.srt · .lrc</div>
+      </div>
+      <div id="srt-info" style="display:none"></div>
+
+      <!-- 重拍偵測 -->
+      <button id="beat-btn" onclick="runDetectBeats()"
+        style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;
+               background:var(--bg);color:var(--muted);cursor:pointer;font-size:11px;
+               font-family:var(--font-mono);transition:all .2s;"
+        onmouseover="this.style.borderColor='var(--gold-dim)';this.style.color='var(--text)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+        🥁 偵測重拍 — 自動在節拍位置加 *標記*
+      </button>
+
+      <!-- 可編輯 LRC 區 -->
+      <div id="lrc-edit-wrap" style="display:none;flex-direction:column;gap:4px;">
+        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);">
+          LRC 預覽 · 可直接編輯 · 用 *詞* 標記重音
+        </div>
+        <textarea id="lrc-textarea"
+          style="width:100%;height:120px;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--font-mono);resize:vertical;outline:none;line-height:1.5;"
+          placeholder="[00:10.50]這次算我*認真*想過一場"></textarea>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);">
+          ※ 有填此欄時，渲染以此內容為準（忽略上傳的歌詞檔）
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 背景圖 -->
+  <div class="section">
+    <div class="section-header"><span class="dot"></span>BACKGROUND IMAGES</div>
+    <div class="section-body">
+      <div class="drop-zone" id="bg-drop" onclick="document.getElementById('bg-input').click()">
+        <input type="file" id="bg-input" accept=".jpg,.jpeg,.png,.webp" multiple hidden/>
+        <div class="drop-icon">🖼️</div>
+        <div class="drop-label"><b>點選</b>或拖曳背景圖片</div>
+        <div class="drop-hint">支援多張 · 可設定各圖顯示秒數</div>
+      </div>
+      <div id="img-list" class="img-list"></div>
+
+      <div class="form-row">
+        <span class="form-label">遮罩深度</span>
+        <input type="range" id="bg-dim" min="0" max="1" step="0.05" value="0.5"/>
+        <span class="range-val" id="bg-dim-val">0.5</span>
+      </div>
+    </div>
+  </div>
+
+</aside>
+
+<!-- RIGHT PANEL -->
+<main class="right-panel">
+
+  <!-- 上半：常駐預覽 -->
+  <div class="preview-zone">
+    <div class="preview-area ratio-169" id="preview-area">
+      <div class="preview-placeholder" id="preview-placeholder">
+        <div class="pi-icon">🎬</div>
+        <p>調整設定即時預覽</p>
+      </div>
+      <img class="preview-bg" id="preview-bg" style="display:none"/>
+      <div class="preview-dim" id="preview-dim" style="display:none"></div>
+      <div class="preview-echo-ghost" id="echo-ghost-2" style="display:none"></div>
+      <div class="preview-echo-ghost" id="echo-ghost-1" style="display:none"></div>
+      <div id="preview-text" style="display:none"></div>
+    </div>
+    <p class="preview-note">※ 預覽僅供樣式參考，動畫效果以實際 mp4 為準</p>
+  </div>
+
+  <!-- 下半：可捲動設定 -->
+  <div class="settings-zone">
+
+    <!-- POSITION -->
+    <div class="section">
+      <div class="section-header"><span class="dot"></span>POSITION</div>
+      <div class="section-body">
+        <div class="pos-grid">
+          <button class="pos-btn" data-pos="upper-third"><span class="pos-icon">⬆</span>上方</button>
+          <button class="pos-btn selected" data-pos="center"><span class="pos-icon">⊞</span>置中</button>
+          <button class="pos-btn" data-pos="lower-third"><span class="pos-icon">⬇</span>下方</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TYPOGRAPHY -->
+    <div class="section">
+      <div class="section-header"><span class="dot"></span>TYPOGRAPHY</div>
+      <div class="section-body">
+
+        <div class="form-row">
+          <span class="form-label">字體</span>
+          <select id="font-family">
+            <optgroup label="── 現代無襯線">
+              <option value="sans-serif">系統無襯線</option>
+              <option value="'Noto Sans TC', sans-serif">Noto Sans TC（繁體）</option>
+            </optgroup>
+            <optgroup label="── 書法 / 手寫">
+              <option value="'Noto Serif TC', serif">Noto Serif TC（傳統襯線）</option>
+              <option value="'Zhi Mang Xing', cursive">智芒星（毛筆行書）</option>
+              <option value="'Ma Shan Zheng', cursive">馬善政楷書（工整毛筆）</option>
+            </optgroup>
+            <optgroup label="── 設計字體">
+              <option value="'Bebas Neue', sans-serif">Bebas Neue（英文粗黑）</option>
+              <option value="'JetBrains Mono', monospace">JetBrains Mono（等寬）</option>
+              <option value="serif">系統襯線</option>
+              <option value="monospace">系統等寬</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <span class="form-label">字體大小</span>
+          <input type="range" id="font-size" min="32" max="120" step="2" value="68"/>
+          <span class="range-val" id="font-size-val">68px</span>
+        </div>
+
+        <div class="form-row">
+          <span class="form-label">字重</span>
+          <input type="range" id="font-weight" min="100" max="900" step="100" value="700"/>
+          <span class="range-val" id="font-weight-val">700</span>
+        </div>
+
+        <div class="form-row">
+          <span class="form-label">行高</span>
+          <input type="range" id="line-height" min="0.8" max="2.4" step="0.1" value="1.4"/>
+          <span class="range-val" id="line-height-val">1.4</span>
+        </div>
+
+        <div class="form-row">
+          <span class="form-label">字距</span>
+          <input type="range" id="letter-spacing" min="0" max="0.30" step="0.01" value="0.06"/>
+          <span class="range-val" id="letter-spacing-val">0.06em</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- COLOR -->
+    <div class="section">
+      <div class="section-header"><span class="dot"></span>COLOR</div>
+      <div class="section-body">
+
+        <div>
+          <div class="form-label" style="margin-bottom:6px">快速選色</div>
+          <div class="palette-cats" id="palette-cats"></div>
+          <div class="palette-swatches" id="palette-swatches"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-col">
+            <span class="form-label">本體色</span>
+            <div class="form-row" style="gap:6px">
+              <input type="color" id="text-color" value="#ffe600"/>
+              <input type="text" class="hex-input" id="text-color-hex" value="#ffe600" maxlength="7"/>
+            </div>
+          </div>
+          <div class="form-col">
+            <span class="form-label">外框色</span>
+            <div class="form-row" style="gap:6px">
+              <input type="color" id="stroke-color" value="#000000"/>
+              <input type="text" class="hex-input" id="stroke-color-hex" value="#000000" maxlength="7"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <span class="form-label">外框粗細</span>
+          <input type="range" id="stroke-width" min="0" max="10" step="1" value="0"/>
+          <span class="range-val" id="stroke-width-val">0</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ANIMATION -->
+    <div class="section">
+      <div class="section-header"><span class="dot"></span>ANIMATION</div>
+      <div class="section-body">
+
+        <div style="background:rgba(212,160,23,.06);border:1px solid var(--gold-dim);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--muted);font-family:var(--font-mono);line-height:1.6;">
+          重音標記語法：<span style="color:var(--gold)">*詞*</span><br>
+          在歌詞檔裡用 *詞* 包住要強調的字，渲染時會套用重音色與放大
+        </div>
+
+        <div class="form-row">
+          <div class="form-col">
+            <span class="form-label">重音色</span>
+            <div class="form-row" style="gap:6px">
+              <input type="color" id="accent-color" value="#ff6b2b"/>
+              <input type="text" class="hex-input" id="accent-color-hex" value="#ff6b2b" maxlength="7"/>
+            </div>
+          </div>
+          <div class="form-col">
+            <span class="form-label">重音放大</span>
+            <div class="form-row" style="gap:6px">
+              <input type="range" id="accent-scale" min="1" max="1.5" step="0.05" value="1.15"/>
+              <span class="range-val" id="accent-scale-val">1.15</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="anim-grid">
+          <button class="anim-btn selected" data-anim="sentence-fade">
+            <span class="anim-icon">✨</span>
+            <span class="anim-label">淡入整句</span>
+            <span class="anim-desc">柔和淡出·上滑進場</span>
+          </button>
+          <button class="anim-btn" data-anim="line-swap">
+            <span class="anim-icon">⬆⬇</span>
+            <span class="anim-label">上下換行</span>
+            <span class="anim-desc">底部滑入·頂部滑出</span>
+          </button>
+          <button class="anim-btn" data-anim="char-appear">
+            <span class="anim-icon">一二三</span>
+            <span class="anim-label">逐字出現</span>
+            <span class="anim-desc">字依序彈入·依序顯示</span>
+          </button>
+          <button class="anim-btn" data-anim="char-highlight">
+            <span class="anim-icon">▶▶</span>
+            <span class="anim-label">逐字高亮</span>
+            <span class="anim-desc">整句顯示·唱到才亮</span>
+          </button>
+        </div>
+        <button class="anim-btn" data-anim="scale-echo" style="width:100%;margin-top:6px;">
+          <span class="anim-icon">◎◉●</span>
+          <span class="anim-label">疊影放大</span>
+          <span class="anim-desc">3 層疊影同步放大·可調偏移</span>
+        </button>
+
+        <!-- 疊影進階設定（選擇 scale-echo 才顯示） -->
+        <div class="echo-panel" id="echo-panel">
+          <div class="echo-panel-title">疊影進階設定</div>
+
+          <div class="form-row">
+            <span class="form-label" style="min-width:60px">放大幅度</span>
+            <input type="range" id="echo-scale-end" min="1.00" max="1.60" step="0.02" value="1.18"/>
+            <span class="range-val" id="echo-scale-end-val">1.18×</span>
+          </div>
+          <div class="form-row">
+            <span class="form-label" style="min-width:60px">疊影間距</span>
+            <input type="range" id="echo-spread" min="0.02" max="0.28" step="0.01" value="0.09"/>
+            <span class="range-val" id="echo-spread-val">0.09</span>
+          </div>
+          <div class="form-row">
+            <span class="form-label" style="min-width:60px">疊影亮度</span>
+            <input type="range" id="echo-opacity" min="0.05" max="0.80" step="0.05" value="0.28"/>
+            <span class="range-val" id="echo-opacity-val">0.28</span>
+          </div>
+          <div class="form-row">
+            <span class="form-label" style="min-width:60px">X 偏移</span>
+            <input type="range" id="echo-offset-x" min="-120" max="120" step="5" value="0"/>
+            <span class="range-val" id="echo-offset-x-val">0px</span>
+          </div>
+          <div class="form-row">
+            <span class="form-label" style="min-width:60px">Y 偏移</span>
+            <input type="range" id="echo-offset-y" min="-120" max="120" step="5" value="0"/>
+            <span class="range-val" id="echo-offset-y-val">0px</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="section">
+      <div class="section-header"><span class="dot"></span>OUTPUT</div>
+      <div class="section-body">
+
+        <!-- 畫幅比例 -->
+        <div class="form-label" style="margin-bottom:6px">畫幅比例</div>
+        <div class="ratio-grid">
+          <button class="ratio-btn selected" data-ratio="16:9">
+            <span class="ratio-icon">🖥</span>
+            16 : 9<br><span style="font-size:9px;color:var(--muted)">橫向 1280×720</span>
+          </button>
+          <button class="ratio-btn" data-ratio="9:16">
+            <span class="ratio-icon">📱</span>
+            9 : 16<br><span style="font-size:9px;color:var(--muted)">直向 720×1280</span>
+          </button>
+        </div>
+
+        <!-- 輸出品質 CRF -->
+        <div class="form-row" style="margin-top:4px">
+          <span class="form-label" style="min-width:72px">輸出品質</span>
+          <input type="range" id="crf" min="10" max="35" step="1" value="18"/>
+          <span class="range-val" id="crf-val">18</span>
+        </div>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono)">CRF 數值越小畫質越好，檔案越大（建議 16–23）</div>
+
+        <!-- 字幕時間偏移 -->
+        <div class="form-row">
+          <span class="form-label" style="min-width:72px">字幕偏移</span>
+          <input type="number" id="srt-offset-ms" min="-5000" max="5000" step="50" value="0"
+            style="flex:1;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;font-family:var(--font-mono);"/>
+          <span class="form-label">ms</span>
+        </div>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono)">正數=字幕延後，負數=字幕提早（例如 -200 提早 0.2 秒）</div>
+
+      </div>
+    </div>
+
+    <!-- RENDER -->
+    <div class="render-section">
+      <button class="render-btn" id="render-btn">
+        ▶ &nbsp;開始渲染
+      </button>
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-log" id="progress-log"></div>
+      </div>
+      <a class="download-btn" id="download-btn" href="/download" download="mv.mp4">
+        ⬇ &nbsp;下載 MP4
+      </a>
+    </div>
+
+    <!-- STYLE PRESETS -->
+    <div class="section">
+      <div class="section-header"><span class="dot"></span>STYLE PRESETS</div>
+      <div class="section-body">
+        <div class="preset-grid">
+          <button class="preset-card" onclick="applyPreset('shortform')">
+            <strong>短影音 Caption</strong>
+            <span>大字·逐字高亮·置中</span>
+          </button>
+          <button class="preset-card" onclick="applyPreset('highenergy')">
+            <strong>高能衝擊</strong>
+            <span>霓虹粗體·逐字出現·外框</span>
+          </button>
+          <button class="preset-card" onclick="applyPreset('kpop')">
+            <strong>K-pop 未來感</strong>
+            <span>金屬白·細字·上下換行</span>
+          </button>
+          <button class="preset-card" onclick="applyPreset('cinematic')">
+            <strong>電影字幕</strong>
+            <span>下方·白字·穩定淡入</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /settings-zone -->
+
+</main>
+
+<!-- STATUS BAR -->
+<footer>
+  <div class="status-dot"></div>
+  <span id="status-msg">伺服器運行中 · 等待輸入</span>
+  <span style="margin-left:auto;opacity:.4">localhost:7842</span>
+</footer>
+
+</div>
+
+<script>
+// ── 狀態 ──────────────────────────────────────────────
+const state = {
+  audioFile: null, srtFile: null, bgFiles: [],
+  bgDurations: [],
+};
+
+// ── 工具 ──────────────────────────────────────────────
+function fmt(bytes) {
+  if (bytes < 1024) return bytes + 'B';
+  if (bytes < 1<<20) return (bytes>>10) + 'KB';
+  return (bytes/1048576).toFixed(1) + 'MB';
+}
+function setStatus(msg) { document.getElementById('status-msg').textContent = msg; }
+
+// ── File drop zones ───────────────────────────────────
+function setupDrop(zoneId, inputId, onFile) {
+  const zone = document.getElementById(zoneId);
+  const inp  = document.getElementById(inputId);
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) onFile(e.dataTransfer.files);
+  });
+  inp.addEventListener('change', () => { if (inp.files.length) onFile(inp.files); });
+}
+
+function showFileInfo(infoId, file, onClear) {
+  const el = document.getElementById(infoId);
+  el.style.display = 'flex';
+  el.className = 'file-info';
+  el.innerHTML = `<span class="fi-name">📁 ${file.name}</span><span class="fi-size">${fmt(file.size)}</span><span class="fi-clear" title="移除">✕</span>`;
+  el.querySelector('.fi-clear').onclick = () => { onClear(); el.style.display='none'; };
+}
+
+setupDrop('audio-drop','audio-input', files => {
+  state.audioFile = files[0];
+  showFileInfo('audio-info', files[0], () => state.audioFile = null);
+  setStatus(`音樂已載入：${files[0].name}`);
+  updatePreview();
+});
+
+setupDrop('srt-drop','srt-input', async files => {
+  const f = files[0];
+  state.srtFile = f;
+  showFileInfo('srt-info', f, () => {
+    state.srtFile = null;
+    // 清空 textarea（若是由此檔案填入的）
+    const ta = document.getElementById('lrc-textarea');
+    if (ta.dataset.source === 'upload') { ta.value = ''; document.getElementById('lrc-edit-wrap').style.display = 'none'; }
+  });
+  setStatus(`歌詞已載入：${f.name}`);
+  // 讀檔內容顯示到 LRC textarea，讓使用者可以看到 & 編輯
+  try {
+    const content = await f.text();
+    const ta = document.getElementById('lrc-textarea');
+    ta.value = content;
+    ta.dataset.source = 'upload';
+    document.getElementById('lrc-edit-wrap').style.display = 'flex';
+  } catch {}
+  updatePreview();
+});
+
+// ── 背景圖列表 ────────────────────────────────────────
+setupDrop('bg-drop','bg-input', files => {
+  Array.from(files).forEach(f => {
+    state.bgFiles.push(f);
+    state.bgDurations.push(null);
+  });
+  renderImgList();
+  updatePreview();
+});
+
+function renderImgList() {
+  const list = document.getElementById('img-list');
+  if (!state.bgFiles.length) { list.innerHTML = ''; return; }
+  list.innerHTML = state.bgFiles.map((f,i) => {
+    const url = URL.createObjectURL(f);
+    const dur = state.bgDurations[i];
+    return `<div class="img-item" data-i="${i}">
+      <img class="img-thumb" src="${url}" onerror="this.style.display='none'"/>
+      <span class="img-name">${f.name}</span>
+      <div class="img-dur">
+        <input type="number" value="${dur ?? ''}" placeholder="自動" min="1" max="999"
+          onchange="state.bgDurations[${i}]=this.value?+this.value:null"/>
+        <label>秒</label>
+      </div>
+      <span class="img-remove" onclick="removeBg(${i})">✕</span>
+    </div>`;
+  }).join('');
+  updatePreview();
+}
+
+function removeBg(i) {
+  state.bgFiles.splice(i,1);
+  state.bgDurations.splice(i,1);
+  renderImgList();
+  updatePreview();
+}
+
+// ── Range sliders ─────────────────────────────────────
+function bindRange(id, valId, suffix='', onChange) {
+  const inp = document.getElementById(id);
+  const val = document.getElementById(valId);
+  inp.addEventListener('input', () => {
+    val.textContent = inp.value + suffix;
+    if (onChange) onChange(inp.value);
+    updatePreview();
+  });
+  val.textContent = inp.value + suffix;
+}
+bindRange('bg-dim','bg-dim-val','', v => {
+  document.getElementById('preview-dim').style.background = `rgba(0,0,0,${v})`;
+});
+bindRange('font-size','font-size-val','px');
+bindRange('font-weight','font-weight-val');
+bindRange('stroke-width','stroke-width-val');
+bindRange('accent-scale','accent-scale-val');
+bindRange('line-height','line-height-val');
+bindRange('letter-spacing','letter-spacing-val','em');
+bindRange('echo-scale-end','echo-scale-end-val','×');
+bindRange('echo-spread','echo-spread-val');
+bindRange('echo-opacity','echo-opacity-val');
+bindRange('echo-offset-x','echo-offset-x-val','px');
+bindRange('echo-offset-y','echo-offset-y-val','px');
+bindRange('crf','crf-val');
+document.getElementById('srt-offset-ms').addEventListener('input', () => updatePreview());
+
+// ── Color pickers + hex sync ──────────────────────────
+function syncColor(pickerId, hexId) {
+  const picker = document.getElementById(pickerId);
+  const hex    = document.getElementById(hexId);
+  picker.addEventListener('input', () => {
+    hex.value = picker.value;
+    updatePreview();
+  });
+  hex.addEventListener('input', () => {
+    if (/^#[0-9a-fA-F]{6}$/.test(hex.value)) {
+      picker.value = hex.value;
+      updatePreview();
+    }
+  });
+  hex.addEventListener('blur', () => {
+    if (!/^#[0-9a-fA-F]{6}$/.test(hex.value)) hex.value = picker.value;
+  });
+}
+syncColor('text-color','text-color-hex');
+syncColor('stroke-color','stroke-color-hex');
+syncColor('accent-color','accent-color-hex');
+
+// ── Color palette ─────────────────────────────────────
+const PALETTE = {
+  '金黃': ['#FFE600','#FFD700','#F59E0B','#D4A017','#B8860B'],
+  '白灰': ['#FFFFFF','#E8E6E0','#C0C0C0','#9E9E9E','#616161'],
+  '黑暗': ['#0a0a0a','#1a1a1a','#2d2d2d','#444444','#1a1a2e'],
+  '紅': ['#FF4444','#FF1744','#E53935','#FF6B6B','#C62828'],
+  '橘': ['#FF8C42','#FFA726','#FF6B2B','#FFB74D','#F57C00'],
+  '綠': ['#22C55E','#4CAF50','#00E676','#69F0AE','#1B5E20'],
+  '青': ['#00E5FF','#00BCD4','#18FFFF','#80DEEA','#006064'],
+  '藍': ['#448AFF','#2196F3','#82B1FF','#1565C0','#0D47A1'],
+  '紫': ['#E040FB','#9C27B0','#7C4DFF','#B39DDB','#4A148C'],
+  '粉': ['#FF80AB','#FF4081','#F48FB1','#FF69B4','#880E4F'],
+  '霓虹': ['#00FF41','#FF00FF','#00FFFF','#FF6600','#CCFF00'],
+};
+
+let activeCat = '金黃';
+let activeSwatch = '#FFE600';
+
+function buildPalette() {
+  const cats = document.getElementById('palette-cats');
+  cats.innerHTML = Object.keys(PALETTE).map(cat =>
+    `<button class="palette-cat${cat === activeCat ? ' active' : ''}" onclick="selectCat('${cat}')">${cat}</button>`
+  ).join('');
+  buildSwatches();
+}
+
+function buildSwatches() {
+  const wrap = document.getElementById('palette-swatches');
+  wrap.innerHTML = PALETTE[activeCat].map(c =>
+    `<div class="swatch${c === activeSwatch ? ' active' : ''}" style="background:${c}" title="${c}"
+      onclick="selectSwatch('${c}')"></div>`
+  ).join('');
+}
+
+function selectCat(cat) {
+  activeCat = cat;
+  buildPalette();
+}
+
+function selectSwatch(color) {
+  activeSwatch = color;
+  document.getElementById('text-color').value = color;
+  document.getElementById('text-color-hex').value = color;
+  buildSwatches();
+  updatePreview();
+}
+
+buildPalette();
+
+// ── Position picker ───────────────────────────────────
+document.querySelectorAll('.pos-btn[data-pos]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pos-btn[data-pos]').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    updatePreview();
+  });
+});
+function getPosition() {
+  return document.querySelector('.pos-btn[data-pos].selected')?.dataset.pos ?? 'center';
+}
+
+// ── Animation mode picker ─────────────────────────────
+document.querySelectorAll('.anim-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    // 疊影面板只在 scale-echo 時出現
+    document.getElementById('echo-panel').classList.toggle('visible', btn.dataset.anim === 'scale-echo');
+    updatePreview();
+  });
+});
+function getAnimMode() {
+  return document.querySelector('.anim-btn.selected')?.dataset.anim ?? 'sentence-fade';
+}
+
+// ── Aspect ratio picker ───────────────────────────────
+document.querySelectorAll('.ratio-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const is916 = btn.dataset.ratio === '9:16';
+    const pa = document.getElementById('preview-area');
+    pa.className = 'preview-area ' + (is916 ? 'ratio-916' : 'ratio-169');
+    updatePreview();
+  });
+});
+function getAspectRatio() {
+  return document.querySelector('.ratio-btn.selected')?.dataset.ratio ?? '16:9';
+}
+
+// ── Preview zoom (scroll wheel) ───────────────────────
+let previewZoom = 1;
+const previewEl = document.getElementById('preview-area');
+previewEl.addEventListener('wheel', e => {
+  e.preventDefault();
+  previewZoom = Math.min(3, Math.max(0.5, previewZoom - e.deltaY * 0.001));
+  previewEl.style.transform = `scale(${previewZoom})`;
+  previewEl.style.cursor = previewZoom > 1 ? 'zoom-out' : 'zoom-in';
+}, { passive: false });
+previewEl.addEventListener('dblclick', () => {
+  previewZoom = 1;
+  previewEl.style.transform = 'scale(1)';
+  previewEl.style.cursor = 'zoom-in';
+});
+
+// ── 預覽更新 ──────────────────────────────────────────
+function updatePreview() {
+  const color   = document.getElementById('text-color').value;
+  const size    = parseFloat(document.getElementById('font-size').value);
+  const weight  = document.getElementById('font-weight').value;
+  const stroke  = document.getElementById('stroke-color').value;
+  const sWidth  = document.getElementById('stroke-width').value;
+  const font    = document.getElementById('font-family').value;
+  const lh      = document.getElementById('line-height').value;
+  const ls      = document.getElementById('letter-spacing').value;
+  const pos     = getPosition();
+  const dim     = document.getElementById('bg-dim').value;
+  const animMode = getAnimMode();
+
+  const pt    = document.getElementById('preview-text');
+  const ph    = document.getElementById('preview-placeholder');
+  const pbg   = document.getElementById('preview-bg');
+  const pdim  = document.getElementById('preview-dim');
+  const eg1   = document.getElementById('echo-ghost-1');
+  const eg2   = document.getElementById('echo-ghost-2');
+
+  const scaledSize = Math.round(size * 0.4);
+  const posStyle = pos === 'lower-third'
+    ? 'bottom:20px;top:auto;'
+    : pos === 'upper-third'
+    ? 'top:20px;bottom:auto;'
+    : 'top:50%;transform:translateY(-50%);';
+
+  const baseStyle = `
+    position:absolute; left:0; right:0; padding:12px 32px;
+    text-align:center; word-break:break-word; pointer-events:none;
+    font-weight:${weight}; color:${color};
+    font-size:${scaledSize}px; font-family:${font};
+    line-height:${lh}; letter-spacing:${ls}em;
+    text-shadow:0 2px 6px rgba(0,0,0,.9);
+    -webkit-text-stroke:${sWidth > 0 ? sWidth * 0.4 + 'px ' + stroke : '0'};
+    ${posStyle}
+  `;
+
+  pt.style.cssText = baseStyle;
+  pt.textContent = '這次算我認真想過一場';
+  pt.style.display = 'block';
+  ph.style.display = 'none';
+
+  // ── Echo ghost 即時預覽 ───────────────────────────────
+  if (animMode === 'scale-echo') {
+    const spread  = parseFloat(document.getElementById('echo-spread').value);
+    const opacity = parseFloat(document.getElementById('echo-opacity').value);
+    const ox      = parseFloat(document.getElementById('echo-offset-x').value) * 0.4;
+    const oy      = parseFloat(document.getElementById('echo-offset-y').value) * 0.4;
+    const r1 = 1.0 - spread * 2;
+    const r2 = 1.0 - spread;
+
+    [eg1, eg2].forEach(g => {
+      g.style.cssText = `
+        position:absolute; left:0; right:0; padding:12px 32px;
+        text-align:center; word-break:break-word; pointer-events:none;
+        font-weight:${weight}; color:${color};
+        font-size:${scaledSize}px; font-family:${font};
+        line-height:${lh}; letter-spacing:${ls}em;
+        transform-origin:center center;
+        ${posStyle}
+      `;
+      g.textContent = '這次算我認真想過一場';
+      g.style.display = 'block';
+    });
+    eg2.style.transform = `translateX(${ox * 2}px) translateY(${oy * 2}px) scale(${r1})`;
+    eg2.style.opacity   = opacity * 0.42;
+    eg2.style.filter    = 'blur(1.6px)';
+    eg1.style.transform = `translateX(${ox}px) translateY(${oy}px) scale(${r2})`;
+    eg1.style.opacity   = opacity;
+    eg1.style.filter    = 'blur(0.6px)';
+  } else {
+    eg1.style.display = 'none';
+    eg2.style.display = 'none';
+  }
+
+  if (state.bgFiles.length) {
+    pbg.src = URL.createObjectURL(state.bgFiles[0]);
+    pbg.style.display = 'block';
+    pdim.style.background = `rgba(0,0,0,${dim})`;
+    pdim.style.display = 'block';
+  } else {
+    pbg.style.display = 'none';
+    pdim.style.display = 'none';
+  }
+}
+
+// ── 風格速查 ──────────────────────────────────────────
+function applyPreset(name) {
+  const presets = {
+    shortform: {
+      textColor:'#FFE600', strokeWidth:'0', fontSize:'76', fontWeight:'900',
+      fontFamily:"'Noto Sans TC', sans-serif", pos:'center', anim:'char-highlight',
+    },
+    highenergy: {
+      textColor:'#00FFCC', strokeColor:'#000000', strokeWidth:'4', fontSize:'82', fontWeight:'900',
+      fontFamily:"'Bebas Neue', sans-serif", pos:'center', anim:'char-appear',
+    },
+    kpop: {
+      textColor:'#E8E6E0', strokeColor:'#ffffff', strokeWidth:'1', fontSize:'58', fontWeight:'300',
+      fontFamily:"sans-serif", pos:'center', anim:'line-swap',
+    },
+    cinematic: {
+      textColor:'#ffffff', strokeColor:'#000000', strokeWidth:'2', fontSize:'48', fontWeight:'400',
+      fontFamily:'serif', pos:'lower-third', anim:'sentence-fade',
+    },
+  };
+  const p = presets[name]; if (!p) return;
+
+  document.getElementById('text-color').value      = p.textColor;
+  document.getElementById('text-color-hex').value  = p.textColor;
+  document.getElementById('font-size').value        = p.fontSize;
+  document.getElementById('font-size-val').textContent = p.fontSize + 'px';
+  document.getElementById('font-weight').value      = p.fontWeight;
+  document.getElementById('font-weight-val').textContent = p.fontWeight;
+  document.getElementById('stroke-width').value     = p.strokeWidth;
+  document.getElementById('stroke-width-val').textContent = p.strokeWidth;
+  if (p.strokeColor) {
+    document.getElementById('stroke-color').value     = p.strokeColor;
+    document.getElementById('stroke-color-hex').value = p.strokeColor;
+  }
+  document.getElementById('font-family').value = p.fontFamily;
+
+  document.querySelectorAll('.pos-btn[data-pos]').forEach(b => {
+    b.classList.toggle('selected', b.dataset.pos === p.pos);
+  });
+  document.querySelectorAll('.anim-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.anim === p.anim);
+  });
+
+  // update active swatch to match text color
+  activeSwatch = p.textColor;
+  buildSwatches();
+
+  updatePreview();
+  setStatus(`已套用風格：${name}`);
+}
+
+// ── 語音辨識 ──────────────────────────────────────────
+const TRANSCRIBE_BTN_DEFAULT = `<span style="font-size:16px;">🎙 AI 辨識歌詞</span><span style="font-size:10px;color:var(--muted);font-family:var(--font-body);">Whisper — 自動生成帶時間軸的 LRC 歌詞</span>`;
+const TRANSCRIBE_BTN_LOADING = `<span style="font-size:14px;">⏳ 辨識中...</span><span style="font-size:10px;color:var(--muted);font-family:var(--font-body);">首次需下載模型，請稍候</span>`;
+
+async function runTranscribe() {
+  if (!state.audioFile) { setStatus('⚠ 請先上傳音樂檔案'); return; }
+  const btn = document.getElementById('transcribe-btn');
+  btn.disabled = true;
+  btn.innerHTML = TRANSCRIBE_BTN_LOADING;
+
+  // ETA 計時器：每秒更新狀態列顯示已等待時間
+  const startTime = Date.now();
+  const etaTimer = setInterval(() => {
+    const sec = Math.floor((Date.now() - startTime) / 1000);
+    const min = Math.floor(sec / 60);
+    const s   = sec % 60;
+    const elapsed = min > 0 ? `${min}分${s}秒` : `${sec}秒`;
+    const hint = sec < 30 ? '首次需下載模型 ~1.5GB，請稍候' : sec < 120 ? '模型下載中...' : '辨識中，快好了';
+    setStatus(`🎙 語音辨識進行中 · 已等待 ${elapsed}（${hint}）`);
+  }, 1000);
+  setStatus('🎙 語音辨識啟動中...');
+
+  try {
+    const audioBuf = await state.audioFile.arrayBuffer();
+    const audioBlob = new File([audioBuf], state.audioFile.name, { type: state.audioFile.type });
+    const fd = new FormData();
+    fd.append('audio', audioBlob, audioBlob.name);
+    fd.append('lang', 'zh');
+    const res = await fetch('/transcribe', { method: 'POST', body: fd });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || '辨識失敗');
+    const wrap = document.getElementById('lrc-edit-wrap');
+    const ta   = document.getElementById('lrc-textarea');
+    ta.value = json.lrc;
+    wrap.style.display = 'flex';
+    const total = Math.floor((Date.now() - startTime) / 1000);
+    setStatus(`✅ 辨識完成（耗時 ${total}秒）· 共 ${json.lrc.split('\n').filter(Boolean).length} 行 · 可直接編輯`);
+  } catch(e) {
+    setStatus('❌ 辨識錯誤：' + e.message);
+  } finally {
+    clearInterval(etaTimer);
+    btn.disabled = false;
+    btn.innerHTML = TRANSCRIBE_BTN_DEFAULT;
+  }
+}
+
+// ── 重拍偵測 ──────────────────────────────────────────
+async function runDetectBeats() {
+  if (!state.audioFile) { setStatus('⚠ 請先上傳音樂檔案'); return; }
+  const btn = document.getElementById('beat-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 偵測中...';
+  setStatus('偵測音樂重拍中...');
+  try {
+    let lrcInput = document.getElementById('lrc-textarea').value.trim();
+    // 若 textarea 空白但有上傳歌詞檔，讀檔內容作為 LRC 輸入
+    if (!lrcInput && state.srtFile) {
+      lrcInput = await state.srtFile.text().catch(() => '');
+    }
+    const audioBuf = await state.audioFile.arrayBuffer();
+    const audioBlob = new File([audioBuf], state.audioFile.name, { type: state.audioFile.type });
+    const fd = new FormData();
+    fd.append('audio', audioBlob, audioBlob.name);
+    if (lrcInput) fd.append('lrc', new Blob([lrcInput], { type: 'text/plain' }), 'lyrics.lrc');
+    const res = await fetch('/detect-beats', { method: 'POST', body: fd });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || '偵測失敗');
+    if (json.lrc) {
+      const ta = document.getElementById('lrc-textarea');
+      ta.value = json.lrc;
+      document.getElementById('lrc-edit-wrap').style.display = 'flex';
+    }
+    setStatus(`✅ 偵測到 ${json.beats.length} 個重拍，已標記 *重音*`);
+  } catch(e) {
+    setStatus('❌ 重拍偵測錯誤：' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🥁 偵測重拍';
+  }
+}
+
+// ── 渲染 ──────────────────────────────────────────────
+document.getElementById('render-btn').addEventListener('click', async () => {
+  const lrcContent = document.getElementById('lrc-textarea').value.trim();
+  if (!state.audioFile || (!state.srtFile && !lrcContent)) {
+    setStatus('⚠ 請先上傳音樂，以及上傳歌詞或使用語音辨識'); return;
+  }
+  const btn = document.getElementById('render-btn');
+  btn.disabled = true;
+  const pw = document.getElementById('progress-wrap');
+  pw.style.display = 'block';
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('progress-log').textContent = '';
+  document.getElementById('download-btn').style.display = 'none';
+
+  const es = new EventSource('/progress');
+  es.addEventListener('start',    e => { setStatus(JSON.parse(e.data).message); });
+  es.addEventListener('progress', e => {
+    const d = JSON.parse(e.data);
+    document.getElementById('progress-fill').style.width = d.percent + '%';
+    document.getElementById('progress-log').textContent = d.message;
+  });
+  es.addEventListener('done', () => {
+    es.close(); btn.disabled = false;
+    setStatus('✅ 渲染完成！');
+    document.getElementById('progress-fill').style.width = '100%';
+    document.getElementById('download-btn').style.display = 'flex';
+  });
+  es.addEventListener('error', e => {
+    const d = JSON.parse(e.data || '{}');
+    es.close(); btn.disabled = false;
+    setStatus('❌ ' + (d.message || '渲染失敗'));
+  });
+  es.onerror = () => {};
+
+  // ERR_UPLOAD_FILE_CHANGED 防護：先把所有 File 讀進記憶體再建 FormData
+  // Chrome 在上傳途中若偵測到磁碟檔案變更（防毒掃描、索引）會拋此錯誤
+  setStatus('讀取檔案中...');
+  let audioBlob, srtBlob, bgBlobs;
+  try {
+    const readIntoBlob = async (file) => {
+      const buf = await file.arrayBuffer();
+      return new File([buf], file.name, { type: file.type });
+    };
+    [audioBlob, ...bgBlobs] = await Promise.all([
+      readIntoBlob(state.audioFile),
+      ...state.bgFiles.map(readIntoBlob),
+    ]);
+    srtBlob = lrcContent
+      ? new Blob([lrcContent], { type: 'text/plain' })
+      : await state.srtFile.arrayBuffer().then(b => new File([b], state.srtFile.name, { type: state.srtFile.type }));
+  } catch(e) {
+    es.close(); btn.disabled = false;
+    setStatus('❌ 讀取檔案失敗：' + e.message); return;
+  }
+
+  const fd = new FormData();
+  fd.append('audio', audioBlob, state.audioFile.name);
+  fd.append('srt', srtBlob, lrcContent ? 'lyrics.lrc' : state.srtFile.name);
+  bgBlobs.forEach((b, i) => fd.append(`bg${i}`, b, state.bgFiles[i].name));
+  fd.append('bgDurations', JSON.stringify(state.bgDurations));
+  fd.append('settings', JSON.stringify({
+    bgDim:         document.getElementById('bg-dim').value,
+    textPosition:  getPosition(),
+    fontSize:      document.getElementById('font-size').value,
+    fontWeight:    document.getElementById('font-weight').value,
+    textColor:     document.getElementById('text-color').value,
+    strokeColor:   document.getElementById('stroke-color').value,
+    strokeWidth:   document.getElementById('stroke-width').value,
+    fontFamily:    document.getElementById('font-family').value,
+    animationMode: getAnimMode(),
+    aspectRatio:   getAspectRatio(),
+    accentColor:   document.getElementById('accent-color').value,
+    accentScale:   document.getElementById('accent-scale').value,
+    songTitle:     document.getElementById('song-title').value.trim(),
+    artist:        document.getElementById('song-artist').value.trim(),
+    echoScaleEnd:  document.getElementById('echo-scale-end').value,
+    echoSpread:    document.getElementById('echo-spread').value,
+    echoOpacity:   document.getElementById('echo-opacity').value,
+    echoOffsetX:   document.getElementById('echo-offset-x').value,
+    echoOffsetY:   document.getElementById('echo-offset-y').value,
+    lineHeight:    document.getElementById('line-height').value,
+    letterSpacing: document.getElementById('letter-spacing').value,
+    crf:           document.getElementById('crf').value,
+    srtOffsetMs:   document.getElementById('srt-offset-ms').value,
+  }));
+
+  setStatus('上傳中...');
+  try {
+    await fetch('/render', { method: 'POST', body: fd });
+  } catch(e) {
+    es.close(); btn.disabled = false;
+    setStatus('❌ 連線失敗：' + e.message);
+  }
+});
+</script>
+</body>
+</html>

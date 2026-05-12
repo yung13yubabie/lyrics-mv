@@ -1,0 +1,1 @@
+C:\Users\LIN\Desktop\lyrics-mv> node scripts/make-mv.mjs --audio "C:\Users\LIN\Downloads\《這次算我》.wav"  --srt "C:\Users\LIN\Downloads\《這次算我》.lrc"  --bg ""C:\Users\LIN\Downloads\Gemini_Generated_Image_wwlmghwwlmghwwlm.png"" --dim 0.6
