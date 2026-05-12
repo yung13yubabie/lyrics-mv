@@ -43,6 +43,7 @@ npm install
 ## 方式一：Web UI（推薦）
 
 ```bash
+cd Desktop\lyrics-mv
 node scripts/server.mjs
 ```
 
