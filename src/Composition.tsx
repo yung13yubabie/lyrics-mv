@@ -53,6 +53,8 @@ export const CompositionSchema = z.object({
   lineHeight:        z.number().default(1.4),
   letterSpacing:     z.number().default(0.06),
   srtOffsetMs:       z.number().default(0),
+  songTitleImage:    z.string().default(""),
+  artistImage:       z.string().default(""),
 });
 
 export type CompositionProps = z.infer<typeof CompositionSchema>;
@@ -83,6 +85,8 @@ export const MyComposition: React.FC<CompositionProps> = ({
   lineHeight,
   letterSpacing,
   srtOffsetMs,
+  songTitleImage,
+  artistImage,
 }) => {
   const { fps } = useVideoConfig();
   const totalFrames = Math.ceil(durationInSeconds * 30);
@@ -140,27 +144,31 @@ export const MyComposition: React.FC<CompositionProps> = ({
 
       <Audio src={staticFile(audioFile)} />
 
-      {/* 歌曲資訊浮水印 */}
-      {(songTitle || artist) && (
+      {/* 歌曲資訊浮水印（PNG 優先於文字）*/}
+      {(songTitle || artist || songTitleImage || artistImage) && (
         <AbsoluteFill style={{
           justifyContent: "flex-end",
           alignItems: "flex-start",
           padding: "0 0 28px 32px",
           pointerEvents: "none",
         }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {artist && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+            {artistImage ? (
+              <Img src={staticFile(artistImage)} style={{ height: 22, width: "auto", display: "block",
+                filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.8))" }} />
+            ) : artist ? (
               <div style={{
                 fontSize: 13,
                 fontFamily: notoSansTCFamily,
                 color: "rgba(255,255,255,0.55)",
                 letterSpacing: "0.12em",
                 textShadow: "0 1px 4px rgba(0,0,0,0.8)",
-              }}>
-                {artist}
-              </div>
-            )}
-            {songTitle && (
+              }}>{artist}</div>
+            ) : null}
+            {songTitleImage ? (
+              <Img src={staticFile(songTitleImage)} style={{ height: 36, width: "auto", display: "block",
+                filter: "drop-shadow(0 1px 6px rgba(0,0,0,0.8))" }} />
+            ) : songTitle ? (
               <div style={{
                 fontSize: 18,
                 fontWeight: 700,
@@ -168,10 +176,8 @@ export const MyComposition: React.FC<CompositionProps> = ({
                 color: "rgba(255,255,255,0.82)",
                 letterSpacing: "0.06em",
                 textShadow: "0 1px 6px rgba(0,0,0,0.8)",
-              }}>
-                {songTitle}
-              </div>
-            )}
+              }}>{songTitle}</div>
+            ) : null}
           </div>
         </AbsoluteFill>
       )}

@@ -252,6 +252,24 @@ const server = createServer(async (req, res) => {
           bi++;
         }
 
+        // 歌名 / 歌手去背 PNG（選填）
+        let songTitleImage = "";
+        if (parts["songTitleImage"]?.data) {
+          const img = parts["songTitleImage"];
+          const ext = path.extname(img.filename) || ".png";
+          const fname = `song-title${ext}`;
+          fs.writeFileSync(path.join(publicDir, fname), img.data);
+          songTitleImage = fname;
+        }
+        let artistImage = "";
+        if (parts["artistImage"]?.data) {
+          const img = parts["artistImage"];
+          const ext = path.extname(img.filename) || ".png";
+          const fname = `artist${ext}`;
+          fs.writeFileSync(path.join(publicDir, fname), img.data);
+          artistImage = fname;
+        }
+
         // 音樂長度
         const durRaw = execSync(
           `ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${path.join(publicDir, audioPublic)}"`,
@@ -288,6 +306,8 @@ const server = createServer(async (req, res) => {
           lineHeight:    parseFloat(settings.lineHeight    ?? "1.4"),
           letterSpacing: parseFloat(settings.letterSpacing ?? "0.06"),
           srtOffsetMs:   parseInt(settings.srtOffsetMs    ?? "0"),
+          songTitleImage,
+          artistImage,
         };
 
         const propsFile = path.join(projectRoot, "tmp-props.json");

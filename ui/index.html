@@ -480,6 +480,109 @@ footer {
 }
 .status-dot { width:6px;height:6px;border-radius:50%;background:var(--success);animation:pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+/* ──────── PNG 上傳按鈕 ──────── */
+.png-upload-btn {
+  display:inline-flex;align-items:center;gap:4px;
+  padding:5px 8px;border:1px dashed var(--border);border-radius:4px;
+  cursor:pointer;font-size:10px;font-family:var(--font-mono);
+  color:var(--muted);background:var(--bg);
+  transition:all .15s;
+}
+.png-upload-btn:hover { border-color:var(--gold-dim);color:var(--text); }
+
+/* ──────── 歌詞編輯器 ──────── */
+.editor-btn {
+  padding:4px 8px;border:1px solid var(--border);border-radius:4px;
+  background:var(--bg);color:var(--text);cursor:pointer;font-size:10px;
+  font-family:var(--font-mono);transition:all .15s;
+}
+.editor-btn:hover:not(:disabled) { border-color:var(--gold-dim);color:var(--gold); }
+.editor-btn:disabled { opacity:.4;cursor:not-allowed; }
+
+.lyrics-list {
+  display:flex;flex-direction:column;gap:2px;
+  max-height:380px;overflow-y:auto;
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:4px;
+}
+.lyrics-empty {
+  padding:20px;text-align:center;color:var(--muted);font-size:11px;
+  font-family:var(--font-mono);
+}
+.lyrics-row {
+  display:flex;align-items:flex-start;gap:6px;
+  padding:5px 6px;border-radius:4px;
+  font-size:11px;font-family:var(--font-mono);
+  border:1px solid transparent;
+  transition:background .1s;
+}
+.lyrics-row:hover { background:rgba(255,255,255,0.03); }
+.lyrics-row.selected { background:rgba(212,160,23,0.08); border-color:var(--gold-dim); }
+.lyrics-row.has-warning { border-color:#ff7a59; }
+.lyrics-row .lr-check { margin-top:2px; cursor:pointer; }
+.lyrics-row .lr-time {
+  color:var(--muted);white-space:nowrap;font-size:10px;
+  cursor:pointer;
+}
+.lyrics-row .lr-time:hover { color:var(--gold); }
+.lyrics-row .lr-text {
+  flex:1;color:var(--text);white-space:pre-wrap;word-break:break-word;
+  cursor:pointer;
+}
+.lyrics-row.is-edited .lr-text { color:var(--gold); }
+.lyrics-row .lr-source-tag {
+  font-size:9px;padding:0 4px;border-radius:2px;align-self:flex-start;
+  background:rgba(255,255,255,0.06);color:var(--muted);
+}
+.lyrics-row.is-edited .lr-source-tag { background:rgba(212,160,23,0.15); color:var(--gold); }
+.lyrics-row .lr-warning {
+  width:100%;font-size:9px;color:#ff7a59;margin-top:2px;flex-basis:100%;
+}
+
+/* inline editor 展開 */
+.lyrics-row-edit {
+  display:flex;flex-direction:column;gap:4px;padding:6px;
+  background:rgba(0,0,0,0.2);border-radius:4px;margin-top:2px;
+  flex-basis:100%;
+}
+.lyrics-row-edit input, .lyrics-row-edit textarea {
+  padding:4px 6px;background:var(--bg);border:1px solid var(--border);
+  border-radius:3px;color:var(--text);font-size:11px;
+  font-family:var(--font-mono);outline:none;
+}
+.lyrics-row-edit .edit-times { display:flex;gap:6px;align-items:center; }
+.lyrics-row-edit .edit-times input { width:90px; }
+.lyrics-row-edit .edit-times label { font-size:10px;color:var(--muted); }
+.lyrics-row-edit textarea { resize:vertical;min-height:36px;width:100%; }
+.lyrics-row-edit .edit-actions { display:flex;gap:4px;justify-content:flex-end; }
+
+/* ──────── 下載矩陣 ──────── */
+.dl-matrix { display:flex;flex-direction:column;gap:4px; }
+.dl-row {
+  display:grid;grid-template-columns:1fr auto auto auto;gap:4px;
+  align-items:center;padding:3px 0;
+}
+.dl-row-primary {
+  border-top:1px dashed var(--border);padding-top:6px;margin-top:2px;
+}
+.dl-label {
+  font-size:11px;color:var(--text);font-family:var(--font-mono);
+}
+.dl-btn {
+  padding:3px 8px;border:1px solid var(--border);border-radius:3px;
+  background:var(--bg);color:var(--text);cursor:pointer;font-size:10px;
+  font-family:var(--font-mono);min-width:42px;
+}
+.dl-btn:hover:not(:disabled) { border-color:var(--gold-dim);color:var(--gold); }
+.dl-btn:disabled { opacity:.3;cursor:not-allowed; }
+.dl-btn-primary {
+  border-color:var(--gold-dim);color:var(--gold);
+  background:rgba(212,160,23,0.04);
+}
+.dl-btn-primary:hover:not(:disabled) {
+  background:rgba(212,160,23,0.12);
+}
 </style>
 </head>
 <body>
@@ -537,28 +640,64 @@ footer {
           style="flex:1;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:var(--font-body);outline:none;"
           oninput="this.style.borderColor='var(--gold-dim)'"/>
       </div>
+      <div class="form-row" style="gap:6px;align-items:center;">
+        <span class="form-label" style="font-size:10px;color:var(--muted)">或上傳 PNG</span>
+        <label class="png-upload-btn" id="song-title-img-label">
+          <input type="file" id="song-title-img-input" accept=".png,image/png" hidden/>
+          <span id="song-title-img-name">選擇去背 PNG</span>
+        </label>
+        <img id="song-title-img-preview" style="display:none;height:24px;width:auto;background:rgba(255,255,255,0.1);border:1px solid var(--border);border-radius:4px;padding:2px;"/>
+        <span id="song-title-img-clear" style="display:none;cursor:pointer;color:var(--muted);font-size:14px;" title="移除">✕</span>
+      </div>
       <div class="form-row">
         <span class="form-label">作者</span>
         <input type="text" id="song-artist" placeholder="（選填）顯示在歌名上方"
           style="flex:1;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:var(--font-body);outline:none;"
           oninput="this.style.borderColor='var(--gold-dim)'"/>
       </div>
+      <div class="form-row" style="gap:6px;align-items:center;">
+        <span class="form-label" style="font-size:10px;color:var(--muted)">或上傳 PNG</span>
+        <label class="png-upload-btn" id="artist-img-label">
+          <input type="file" id="artist-img-input" accept=".png,image/png" hidden/>
+          <span id="artist-img-name">選擇去背 PNG</span>
+        </label>
+        <img id="artist-img-preview" style="display:none;height:18px;width:auto;background:rgba(255,255,255,0.1);border:1px solid var(--border);border-radius:4px;padding:2px;"/>
+        <span id="artist-img-clear" style="display:none;cursor:pointer;color:var(--muted);font-size:14px;" title="移除">✕</span>
+      </div>
+      <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);margin-top:2px;">※ PNG 優先於文字。請自備透明背景 PNG。</div>
     </div>
   </div>
 
-  <!-- 歌詞 -->
+  <!-- 歌詞參考來源（SRT 上傳） -->
   <div class="section">
-    <div class="section-header"><span class="dot"></span>LYRICS</div>
+    <div class="section-header"><span class="dot"></span>LYRICS REFERENCE</div>
     <div class="section-body">
       <div class="drop-zone" id="srt-drop" onclick="document.getElementById('srt-input').click()">
-        <input type="file" id="srt-input" accept=".srt,.lrc" hidden/>
+        <input type="file" id="srt-input" hidden/>
         <div class="drop-icon">📝</div>
-        <div class="drop-label"><b>點選</b>或拖曳歌詞檔案</div>
-        <div class="drop-hint">.srt · .lrc</div>
+        <div class="drop-label"><b>點選</b>或拖曳 SRT 參考歌詞</div>
+        <div class="drop-hint">.srt / .lrc · 容錯解析 · UTF-8 / BOM / CRLF</div>
       </div>
-      <div id="srt-info" style="display:none"></div>
+      <div id="srt-reference-info" style="display:none"></div>
+      <div id="asr-srt-stats" style="display:none;font-size:10px;color:var(--muted);font-family:var(--font-mono);padding:6px 8px;background:var(--bg);border:1px dashed var(--border);border-radius:6px;">
+        <div id="stats-line">ASR: - / SRT: -</div>
+        <div id="diff-warning" style="display:none;color:#ff7a59;margin-top:2px;"></div>
+      </div>
+      <details style="font-size:10px;color:var(--muted);font-family:var(--font-mono);">
+        <summary style="cursor:pointer;padding:4px 0;">▾ 從文字貼上（SRT / LRC 內容）</summary>
+        <textarea id="paste-srt-text"
+          style="width:100%;height:80px;margin-top:4px;padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;font-family:var(--font-mono);resize:vertical;outline:none;"
+          placeholder="貼上 SRT 或 LRC 內容後按下方按鈕"></textarea>
+        <button id="paste-srt-btn" style="margin-top:4px;width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);cursor:pointer;font-size:11px;">📥 解析貼上的歌詞</button>
+      </details>
+    </div>
+  </div>
 
-      <!-- 重拍偵測 -->
+  <!-- 歌詞編輯器 -->
+  <div class="section">
+    <div class="section-header"><span class="dot"></span>LYRICS EDITOR</div>
+    <div class="section-body">
+
       <button id="beat-btn" onclick="runDetectBeats()"
         style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;
                background:var(--bg);color:var(--muted);cursor:pointer;font-size:11px;
@@ -568,18 +707,30 @@ footer {
         🥁 偵測重拍 — 自動在節拍位置加 *標記*
       </button>
 
-      <!-- 可編輯 LRC 區 -->
-      <div id="lrc-edit-wrap" style="display:none;flex-direction:column;gap:4px;">
-        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);">
-          LRC 預覽 · 可直接編輯 · 用 *詞* 標記重音
-        </div>
-        <textarea id="lrc-textarea"
-          style="width:100%;height:120px;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--font-mono);resize:vertical;outline:none;line-height:1.5;"
-          placeholder="[00:10.50]這次算我*認真*想過一場"></textarea>
-        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);">
-          ※ 有填此欄時，渲染以此內容為準（忽略上傳的歌詞檔）
+      <!-- 編輯狀態 + 操作按鈕 -->
+      <div id="editor-toolbar" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:10px;font-family:var(--font-mono);">
+        <span id="editor-status" style="color:var(--muted);">尚無歌詞</span>
+        <span style="flex:1"></span>
+        <button id="merge-btn"   class="editor-btn" disabled title="選 2 個以上相鄰行才能合併">合併同屏 ▾</button>
+        <button id="unmerge-btn" class="editor-btn" disabled>拆解</button>
+        <button id="reset-btn"   class="editor-btn" disabled>回復原始</button>
+      </div>
+
+      <!-- 合併方式選單（隱藏，點 合併同屏 ▾ 展開） -->
+      <div id="merge-modes" style="display:none;flex-wrap:wrap;gap:4px;padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:6px;">
+        <button class="editor-btn" data-merge-mode="newline">換行相連</button>
+        <button class="editor-btn" data-merge-mode="concat">直接相連</button>
+        <button class="editor-btn" data-merge-mode="space">空格相連</button>
+        <button class="editor-btn" data-merge-mode="custom">自訂文字</button>
+      </div>
+
+      <!-- 歌詞列表（list of rows） -->
+      <div id="lyrics-list" class="lyrics-list">
+        <div class="lyrics-empty" id="lyrics-empty">
+          尚未匯入歌詞。可在上方上傳 SRT、或按音樂區的「🎙 AI 辨識歌詞」。
         </div>
       </div>
+
     </div>
   </div>
 
@@ -872,6 +1023,42 @@ footer {
       </a>
     </div>
 
+    <!-- DOWNLOAD 4×3 矩陣 -->
+    <div class="section">
+      <div class="section-header"><span class="dot"></span>LYRICS DOWNLOAD</div>
+      <div class="section-body">
+        <div class="dl-matrix">
+          <div class="dl-row">
+            <span class="dl-label">辨識後歌詞</span>
+            <button class="dl-btn" data-layer="asr" data-ext="srt"  disabled>SRT</button>
+            <button class="dl-btn" data-layer="asr" data-ext="txt"  disabled>TXT</button>
+            <button class="dl-btn" data-layer="asr" data-ext="json" disabled>JSON</button>
+          </div>
+          <div class="dl-row">
+            <span class="dl-label">SRT 參考稿</span>
+            <button class="dl-btn" data-layer="srt" data-ext="srt"  disabled>SRT</button>
+            <button class="dl-btn" data-layer="srt" data-ext="txt"  disabled>TXT</button>
+            <button class="dl-btn" data-layer="srt" data-ext="json" disabled>JSON</button>
+          </div>
+          <div class="dl-row">
+            <span class="dl-label">調整後歌詞</span>
+            <button class="dl-btn" data-layer="edited" data-ext="srt"  disabled>SRT</button>
+            <button class="dl-btn" data-layer="edited" data-ext="txt"  disabled>TXT</button>
+            <button class="dl-btn" data-layer="edited" data-ext="json" disabled>JSON</button>
+          </div>
+          <div class="dl-row dl-row-primary">
+            <span class="dl-label" style="font-weight:700;color:var(--gold)">最終渲染稿</span>
+            <button class="dl-btn dl-btn-primary" data-layer="final" data-ext="srt"  disabled>SRT</button>
+            <button class="dl-btn dl-btn-primary" data-layer="final" data-ext="txt"  disabled>TXT</button>
+            <button class="dl-btn dl-btn-primary" data-layer="final" data-ext="json" disabled>JSON</button>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);margin-top:4px;">
+          ※ 預覽、渲染、「最終」下載讀同一份資料源。未調整時最終 = SRT 參考或 ASR 辨識結果。
+        </div>
+      </div>
+    </div>
+
     <!-- STYLE PRESETS -->
     <div class="section">
       <div class="section-header"><span class="dot"></span>STYLE PRESETS</div>
@@ -915,6 +1102,7 @@ footer {
 const state = {
   audioFile: null, srtFile: null, bgFiles: [],
   bgDurations: [],
+  songTitleImageFile: null, artistImageFile: null,
 };
 
 // ── 工具 ──────────────────────────────────────────────
@@ -956,21 +1144,24 @@ setupDrop('audio-drop','audio-input', files => {
 setupDrop('srt-drop','srt-input', async files => {
   const f = files[0];
   state.srtFile = f;
-  showFileInfo('srt-info', f, () => {
+  showFileInfo('srt-reference-info', f, () => {
     state.srtFile = null;
-    // 清空 textarea（若是由此檔案填入的）
-    const ta = document.getElementById('lrc-textarea');
-    if (ta.dataset.source === 'upload') { ta.value = ''; document.getElementById('lrc-edit-wrap').style.display = 'none'; }
+    if (window.lyricsStore) window.lyricsStore.clearSrtRef();
   });
-  setStatus(`歌詞已載入：${f.name}`);
-  // 讀檔內容顯示到 LRC textarea，讓使用者可以看到 & 編輯
+  setStatus(`SRT 參考歌詞已載入：${f.name}`);
   try {
     const content = await f.text();
-    const ta = document.getElementById('lrc-textarea');
-    ta.value = content;
-    ta.dataset.source = 'upload';
-    document.getElementById('lrc-edit-wrap').style.display = 'flex';
-  } catch {}
+    // 等待 module 載入完成後再解析
+    if (window.__lyricsModulesReady) await window.__lyricsModulesReady;
+    if (window.parseLyricsLike && window.lyricsStore) {
+      const { rows, warnings, sourceFormat } = window.parseLyricsLike(content, 'srt');
+      window.lyricsStore.setSrtRef(rows);
+      const note = sourceFormat === 'lrc' ? '（已將 LRC 自動轉換為 SRT 結構）' : '';
+      setStatus(`✅ SRT 解析成功，已讀取 ${rows.length} 行 ${note}${warnings.length ? ' · ' + warnings.length + ' 條警告' : ''}`);
+    }
+  } catch (e) {
+    setStatus('❌ SRT 解析失敗：' + e.message);
+  }
   updatePreview();
 });
 
@@ -1336,12 +1527,13 @@ async function runTranscribe() {
     const res = await fetch('/transcribe', { method: 'POST', body: fd });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || '辨識失敗');
-    const wrap = document.getElementById('lrc-edit-wrap');
-    const ta   = document.getElementById('lrc-textarea');
-    ta.value = json.lrc;
-    wrap.style.display = 'flex';
+    if (window.__lyricsModulesReady) await window.__lyricsModulesReady;
+    if (window.parseLyricsLike && window.lyricsStore) {
+      const { rows } = window.parseLyricsLike(json.lrc, 'asr');
+      window.lyricsStore.setAsr(rows);
+    }
     const total = Math.floor((Date.now() - startTime) / 1000);
-    setStatus(`✅ 辨識完成（耗時 ${total}秒）· 共 ${json.lrc.split('\n').filter(Boolean).length} 行 · 可直接編輯`);
+    setStatus(`✅ 辨識完成（耗時 ${total}秒）· 共 ${json.lrc.split('\n').filter(Boolean).length} 行 · 可在下方編輯`);
   } catch(e) {
     setStatus('❌ 辨識錯誤：' + e.message);
   } finally {
@@ -1359,10 +1551,19 @@ async function runDetectBeats() {
   btn.textContent = '⏳ 偵測中...';
   setStatus('偵測音樂重拍中...');
   try {
-    let lrcInput = document.getElementById('lrc-textarea').value.trim();
-    // 若 textarea 空白但有上傳歌詞檔，讀檔內容作為 LRC 輸入
-    if (!lrcInput && state.srtFile) {
-      lrcInput = await state.srtFile.text().catch(() => '');
+    if (window.__lyricsModulesReady) await window.__lyricsModulesReady;
+    // 從 store 取得目前最終歌詞稿，序列化成 LRC 送 server
+    const finalRows = window.lyricsStore?.getFinal() || [];
+    let lrcInput = '';
+    if (finalRows.length) {
+      // LRC 格式：[mm:ss.cc]text
+      lrcInput = finalRows.map(r => {
+        const ms = r.startMs;
+        const m = Math.floor(ms / 60000);
+        const s = Math.floor((ms % 60000) / 1000);
+        const cs = Math.floor((ms % 1000) / 10);
+        return `[${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}]${r.text}`;
+      }).join('\n');
     }
     const audioBuf = await state.audioFile.arrayBuffer();
     const audioBlob = new File([audioBuf], state.audioFile.name, { type: state.audioFile.type });
@@ -1372,10 +1573,9 @@ async function runDetectBeats() {
     const res = await fetch('/detect-beats', { method: 'POST', body: fd });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || '偵測失敗');
-    if (json.lrc) {
-      const ta = document.getElementById('lrc-textarea');
-      ta.value = json.lrc;
-      document.getElementById('lrc-edit-wrap').style.display = 'flex';
+    if (json.lrc && window.parseLyricsLike && window.lyricsStore) {
+      const { rows } = window.parseLyricsLike(json.lrc, 'edited');
+      window.lyricsStore.setEdited(rows);
     }
     setStatus(`✅ 偵測到 ${json.beats.length} 個重拍，已標記 *重音*`);
   } catch(e) {
@@ -1388,9 +1588,11 @@ async function runDetectBeats() {
 
 // ── 渲染 ──────────────────────────────────────────────
 document.getElementById('render-btn').addEventListener('click', async () => {
-  const lrcContent = document.getElementById('lrc-textarea').value.trim();
-  if (!state.audioFile || (!state.srtFile && !lrcContent)) {
-    setStatus('⚠ 請先上傳音樂，以及上傳歌詞或使用語音辨識'); return;
+  if (window.__lyricsModulesReady) await window.__lyricsModulesReady;
+  const finalRows = window.lyricsStore?.getFinal() || [];
+  if (!state.audioFile) { setStatus('⚠ 請先上傳音樂'); return; }
+  if (finalRows.length === 0) {
+    setStatus('⚠ 尚未有歌詞。請上傳 SRT 參考歌詞或執行 AI 辨識'); return;
   }
   const btn = document.getElementById('render-btn');
   btn.disabled = true;
@@ -1421,9 +1623,8 @@ document.getElementById('render-btn').addEventListener('click', async () => {
   es.onerror = () => {};
 
   // ERR_UPLOAD_FILE_CHANGED 防護：先把所有 File 讀進記憶體再建 FormData
-  // Chrome 在上傳途中若偵測到磁碟檔案變更（防毒掃描、索引）會拋此錯誤
   setStatus('讀取檔案中...');
-  let audioBlob, srtBlob, bgBlobs;
+  let audioBlob, srtBlob, bgBlobs, titleImgBlob = null, artistImgBlob = null;
   try {
     const readIntoBlob = async (file) => {
       const buf = await file.arrayBuffer();
@@ -1433,9 +1634,12 @@ document.getElementById('render-btn').addEventListener('click', async () => {
       readIntoBlob(state.audioFile),
       ...state.bgFiles.map(readIntoBlob),
     ]);
-    srtBlob = lrcContent
-      ? new Blob([lrcContent], { type: 'text/plain' })
-      : await state.srtFile.arrayBuffer().then(b => new File([b], state.srtFile.name, { type: state.srtFile.type }));
+    // 從 store 取最終歌詞稿，序列化為標準 SRT 字串
+    const srtString = window.toSrtString(finalRows);
+    srtBlob = new Blob([srtString], { type: 'text/plain' });
+    // 歌名/歌手 PNG
+    if (state.songTitleImageFile) titleImgBlob = await readIntoBlob(state.songTitleImageFile);
+    if (state.artistImageFile)    artistImgBlob = await readIntoBlob(state.artistImageFile);
   } catch(e) {
     es.close(); btn.disabled = false;
     setStatus('❌ 讀取檔案失敗：' + e.message); return;
@@ -1443,9 +1647,11 @@ document.getElementById('render-btn').addEventListener('click', async () => {
 
   const fd = new FormData();
   fd.append('audio', audioBlob, state.audioFile.name);
-  fd.append('srt', srtBlob, lrcContent ? 'lyrics.lrc' : state.srtFile.name);
+  fd.append('srt', srtBlob, 'lyrics.srt');
   bgBlobs.forEach((b, i) => fd.append(`bg${i}`, b, state.bgFiles[i].name));
   fd.append('bgDurations', JSON.stringify(state.bgDurations));
+  if (titleImgBlob)  fd.append('songTitleImage', titleImgBlob, state.songTitleImageFile.name);
+  if (artistImgBlob) fd.append('artistImage',    artistImgBlob, state.artistImageFile.name);
   fd.append('settings', JSON.stringify({
     bgDim:         document.getElementById('bg-dim').value,
     textPosition:  getPosition(),
@@ -1480,6 +1686,309 @@ document.getElementById('render-btn').addEventListener('click', async () => {
     setStatus('❌ 連線失敗：' + e.message);
   }
 });
+
+// ══════════════════════════════════════════════════════════
+// 歌詞編輯器 + Store + 下載矩陣（Phase 1 新增）
+// ══════════════════════════════════════════════════════════
+window.__lyricsModulesReady = (async () => {
+  const [parserMod, mergeMod, serializeMod, storeMod, dlMod] = await Promise.all([
+    import('./srt-parser.js'),
+    import('./lyrics-merge.js'),
+    import('./lyrics-serialize.js'),
+    import('./lyrics-store.js'),
+    import('./download.js'),
+  ]);
+  window.parseLyricsLike = parserMod.parseLyricsLike;
+  window.mergeRows       = mergeMod.mergeRows;
+  window.unmergeRow      = mergeMod.unmergeRow;
+  window.updateRow       = mergeMod.updateRow;
+  window.areAdjacent     = mergeMod.areAdjacent;
+  window.toSrtString     = serializeMod.toSrtString;
+  window.toTxtString     = serializeMod.toTxtString;
+  window.toJsonString    = serializeMod.toJsonString;
+  window.downloadBlob    = dlMod.downloadBlob;
+  window.suggestFilename = dlMod.suggestFilename;
+  window.lyricsStore     = storeMod.createLyricsStore();
+
+  const listEl     = document.getElementById('lyrics-list');
+  const emptyEl    = document.getElementById('lyrics-empty');
+  const statusEl   = document.getElementById('editor-status');
+  const mergeBtn   = document.getElementById('merge-btn');
+  const unmergeBtn = document.getElementById('unmerge-btn');
+  const resetBtn   = document.getElementById('reset-btn');
+  const mergeModes = document.getElementById('merge-modes');
+  const statsLine  = document.getElementById('stats-line');
+  const statsBox   = document.getElementById('asr-srt-stats');
+  const diffWarn   = document.getElementById('diff-warning');
+
+  const selected = new Set();
+  let editingId  = null;
+
+  function fmtTime(ms) {
+    const m  = Math.floor(ms / 60000);
+    const s  = Math.floor((ms % 60000) / 1000);
+    const cs = Math.floor((ms % 1000) / 10);
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
+  }
+  function parseTimeInput(s) {
+    if (/^\d+$/.test(s)) return parseInt(s, 10);
+    const m = s.match(/^(\d+):(\d{1,2})[.,:](\d{1,3})$/);
+    if (!m) return NaN;
+    const cs = m[3].length === 2 ? parseInt(m[3], 10) * 10
+             : m[3].length === 3 ? parseInt(m[3], 10)
+             : parseInt(m[3].padEnd(3, '0').slice(0,3), 10);
+    return (+m[1]) * 60000 + (+m[2]) * 1000 + cs;
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderList() {
+    const rows = window.lyricsStore.getFinal();
+    Array.from(listEl.querySelectorAll('.lyrics-row,.lyrics-row-edit')).forEach(el => el.remove());
+    if (!rows.length) {
+      emptyEl.style.display = 'block';
+      statusEl.textContent = '尚無歌詞';
+    } else {
+      emptyEl.style.display = 'none';
+      const rowsHtml = rows.map(r => {
+        const isSel  = selected.has(r.id);
+        const isMerged = Array.isArray(r.mergedFrom) && r.mergedFrom.length > 0;
+        const sourceTag = r.source === 'edited' ? '已調整' : r.source === 'asr' ? 'ASR' : 'SRT';
+        const warnHtml = r.warning ? `<div class="lr-warning">⚠ ${escapeHtml(r.warning)}</div>` : '';
+        const editHtml = editingId === r.id ? `
+          <div class="lyrics-row-edit">
+            <div class="edit-times">
+              <label>開始</label>
+              <input type="text" class="edit-start" value="${fmtTime(r.startMs)}" placeholder="mm:ss.cc"/>
+              <label>結束</label>
+              <input type="text" class="edit-end" value="${fmtTime(r.endMs)}" placeholder="mm:ss.cc"/>
+            </div>
+            <textarea class="edit-text">${escapeHtml(r.text)}</textarea>
+            <div class="edit-actions">
+              <button class="editor-btn edit-save">儲存</button>
+              <button class="editor-btn edit-cancel">取消</button>
+            </div>
+          </div>` : '';
+        return `<div class="lyrics-row ${isSel ? 'selected' : ''} ${r.source === 'edited' ? 'is-edited' : ''} ${r.warning ? 'has-warning' : ''}" data-id="${r.id}">
+          <input type="checkbox" class="lr-check" ${isSel ? 'checked' : ''}/>
+          <span class="lr-time" title="點擊編輯">${fmtTime(r.startMs)} → ${fmtTime(r.endMs)}</span>
+          <span class="lr-text" title="點擊編輯">${escapeHtml(r.text)}</span>
+          <span class="lr-source-tag">${sourceTag}${isMerged ? '·合' : ''}</span>
+          ${warnHtml}
+          ${editHtml}
+        </div>`;
+      }).join('');
+      listEl.insertAdjacentHTML('beforeend', rowsHtml);
+      const editedMark = window.lyricsStore.isModified() ? '（已調整）' : '';
+      statusEl.textContent = `${rows.length} 行 · 已選 ${selected.size} 行 ${editedMark}`;
+    }
+    const sel = Array.from(selected);
+    mergeBtn.disabled = !(sel.length >= 2 && window.areAdjacent(rows, sel));
+    mergeBtn.title = sel.length < 2 ? '至少選 2 行'
+                   : !window.areAdjacent(rows, sel) ? '只能合併相鄰連續的行' : '';
+    const oneSelected = sel.length === 1;
+    const selRow = oneSelected ? rows.find(r => r.id === sel[0]) : null;
+    unmergeBtn.disabled = !(selRow && Array.isArray(selRow.mergedFrom) && selRow.mergedFrom.length > 0);
+    resetBtn.disabled = !window.lyricsStore.isModified();
+    updateDownloadButtons();
+    updateStats();
+  }
+
+  function updateStats() {
+    const asr = window.lyricsStore.getAsr();
+    const srt = window.lyricsStore.getSrtRef();
+    if (!asr && !srt) { statsBox.style.display = 'none'; return; }
+    statsBox.style.display = 'block';
+    const parts = [];
+    parts.push(`ASR: ${asr ? asr.length + ' 行' : '-'}`);
+    parts.push(`SRT 參考: ${srt ? srt.length + ' 行' : '-'}`);
+    parts.push(`已套用: ${window.lyricsStore.isModified() ? '調整後' : (srt ? 'SRT 參考' : 'ASR')}`);
+    statsLine.textContent = parts.join(' · ');
+    const cmp = window.lyricsStore.getCompareResult();
+    if (cmp.diffWarning) {
+      diffWarn.style.display = 'block';
+      diffWarn.textContent = '⚠ ASR 與 SRT ' + cmp.reason + '，建議人工檢查';
+    } else {
+      diffWarn.style.display = 'none';
+    }
+  }
+
+  function updateDownloadButtons() {
+    const asr     = window.lyricsStore.getAsr();
+    const srt     = window.lyricsStore.getSrtRef();
+    const edited  = window.lyricsStore.getEdited();
+    const final   = window.lyricsStore.getFinal();
+    document.querySelectorAll('.dl-btn').forEach(btn => {
+      const layer = btn.dataset.layer;
+      const has = (layer === 'asr'    && asr    && asr.length)
+               || (layer === 'srt'    && srt    && srt.length)
+               || (layer === 'edited' && edited && edited.length)
+               || (layer === 'final'  && final  && final.length);
+      btn.disabled = !has;
+      btn.title = !has ? (layer === 'edited' ? '尚未調整歌詞' : '尚未匯入此層資料') : '';
+    });
+  }
+
+  // 列表事件代理
+  listEl.addEventListener('click', (e) => {
+    const rowEl = e.target.closest('.lyrics-row');
+    if (!rowEl) return;
+    const id = rowEl.dataset.id;
+    if (e.target.classList.contains('lr-check')) {
+      if (e.target.checked) selected.add(id); else selected.delete(id);
+      renderList();
+      return;
+    }
+    if (e.target.classList.contains('lr-time') || e.target.classList.contains('lr-text')) {
+      editingId = editingId === id ? null : id;
+      renderList();
+      return;
+    }
+    if (e.target.classList.contains('edit-save')) {
+      const startStr = rowEl.querySelector('.edit-start').value.trim();
+      const endStr   = rowEl.querySelector('.edit-end').value.trim();
+      const text     = rowEl.querySelector('.edit-text').value;
+      const startMs = parseTimeInput(startStr);
+      const endMs   = parseTimeInput(endStr);
+      if (isNaN(startMs) || isNaN(endMs)) {
+        setStatus('⚠ 時間格式錯誤，請用 mm:ss.cc');
+        return;
+      }
+      window.lyricsStore.applyEditedTransform(rows => window.updateRow(rows, id, { startMs, endMs, text }));
+      editingId = null;
+      return;
+    }
+    if (e.target.classList.contains('edit-cancel')) {
+      editingId = null;
+      renderList();
+      return;
+    }
+  });
+
+  mergeBtn.addEventListener('click', () => {
+    mergeModes.style.display = mergeModes.style.display === 'flex' ? 'none' : 'flex';
+  });
+  mergeModes.addEventListener('click', (e) => {
+    const mode = e.target.dataset.mergeMode;
+    if (!mode) return;
+    const ids = Array.from(selected);
+    let customText = '';
+    if (mode === 'custom') {
+      customText = prompt('輸入合併後的自訂文字：') || '';
+      if (!customText) return;
+    }
+    try {
+      window.lyricsStore.applyEditedTransform(rows => window.mergeRows(rows, ids, mode, customText));
+      selected.clear();
+      mergeModes.style.display = 'none';
+      setStatus('✅ 已合併');
+    } catch (err) {
+      setStatus('❌ ' + err.message);
+    }
+  });
+
+  unmergeBtn.addEventListener('click', () => {
+    const id = Array.from(selected)[0];
+    if (!id) return;
+    try {
+      window.lyricsStore.applyEditedTransform(rows => window.unmergeRow(rows, id));
+      selected.clear();
+      setStatus('✅ 已拆解');
+    } catch (err) {
+      setStatus('❌ ' + err.message);
+    }
+  });
+
+  resetBtn.addEventListener('click', () => {
+    if (!confirm('確定要回復到原始 SRT/ASR 內容？所有編輯會消失。')) return;
+    window.lyricsStore.resetEdited();
+    selected.clear();
+    setStatus('✅ 已回復原始歌詞');
+  });
+
+  document.getElementById('paste-srt-btn').addEventListener('click', () => {
+    const text = document.getElementById('paste-srt-text').value.trim();
+    if (!text) { setStatus('⚠ 請先貼上 SRT 或 LRC 內容'); return; }
+    const { rows, warnings, sourceFormat } = window.parseLyricsLike(text, 'srt');
+    if (rows.length === 0) {
+      setStatus('❌ 解析失敗：未偵測到有效時間碼');
+      return;
+    }
+    window.lyricsStore.setSrtRef(rows);
+    setStatus(`✅ 貼上解析成功（${sourceFormat}）· ${rows.length} 行${warnings.length ? ' · ' + warnings.length + ' 條警告' : ''}`);
+  });
+
+  document.querySelectorAll('.dl-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      const layer = btn.dataset.layer;
+      const ext   = btn.dataset.ext;
+      const map = {
+        asr:    window.lyricsStore.getAsr(),
+        srt:    window.lyricsStore.getSrtRef(),
+        edited: window.lyricsStore.getEdited(),
+        final:  window.lyricsStore.getFinal(),
+      };
+      const rows = map[layer] || [];
+      if (!rows.length) { setStatus('⚠ 此層沒有資料可下載'); return; }
+      const baseName = state.audioFile ? state.audioFile.name : 'lyrics';
+      const fname = window.suggestFilename(baseName, layer, ext);
+      let content, mime;
+      if (ext === 'srt') {
+        content = window.toSrtString(rows);
+        mime = 'application/x-subrip;charset=utf-8';
+      } else if (ext === 'txt') {
+        content = window.toTxtString(rows);
+        mime = 'text/plain;charset=utf-8';
+      } else {
+        const cmp = window.lyricsStore.getCompareResult();
+        content = window.toJsonString(rows, {
+          layer,
+          audioName: state.audioFile ? state.audioFile.name : null,
+          isModified: window.lyricsStore.isModified(),
+          asrLineCount: window.lyricsStore.getAsr()?.length ?? null,
+          srtRefLineCount: window.lyricsStore.getSrtRef()?.length ?? null,
+          diffWarning: cmp.diffWarning,
+          diffReason:  cmp.reason,
+        });
+        mime = 'application/json;charset=utf-8';
+      }
+      window.downloadBlob(content, fname, mime);
+      setStatus(`✅ 已下載 ${fname}`);
+    });
+  });
+
+  window.lyricsStore.subscribe(renderList);
+  renderList();
+
+  // 歌名/歌手 PNG 上傳
+  function setupPngUpload(inputId, nameId, previewId, clearId, stateKey) {
+    const input  = document.getElementById(inputId);
+    const nameEl = document.getElementById(nameId);
+    const prev   = document.getElementById(previewId);
+    const clear  = document.getElementById(clearId);
+    input.addEventListener('change', () => {
+      if (!input.files.length) return;
+      const f = input.files[0];
+      state[stateKey] = f;
+      nameEl.textContent = f.name;
+      prev.src = URL.createObjectURL(f);
+      prev.style.display = 'inline-block';
+      clear.style.display = 'inline-block';
+    });
+    clear.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      state[stateKey] = null;
+      input.value = '';
+      nameEl.textContent = '選擇去背 PNG';
+      prev.style.display = 'none';
+      clear.style.display = 'none';
+    });
+  }
+  setupPngUpload('song-title-img-input','song-title-img-name','song-title-img-preview','song-title-img-clear','songTitleImageFile');
+  setupPngUpload('artist-img-input','artist-img-name','artist-img-preview','artist-img-clear','artistImageFile');
+})();
 </script>
 </body>
 </html>
